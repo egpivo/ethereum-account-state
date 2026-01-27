@@ -81,6 +81,25 @@ library ReentrancyGuard {
 - Unused layers are documented here rather than removed (for educational value)
 - Future extensions can leverage these patterns when needed
 
+## Repository Mismatch Handling
+
+**Current Behavior**: Best-effort diagnostic mode (not fail-fast)
+
+The `ContractRepository` tolerates state mismatches between storage and event reconstruction:
+- Mismatches are logged as warnings but do not throw errors
+- Reconstructed state is returned even if it doesn't match storage
+- This is intentional for educational/diagnostic purposes
+
+**Rationale**:
+- Event reconstruction can be incomplete (missing pagination, reorg handling, etc.)
+- Fail-fast behavior would be too strict for diagnostic use cases
+- Best-effort mode allows exploration and debugging
+
+**For Production**: Consider either:
+- **Fail-fast**: Throw `StateMismatchError` when mismatch detected
+- **Storage-first**: Use storage reads as source of truth, events for history only
+- **Reconciliation**: Implement proper pagination, reorg handling, and storage-first reconciliation
+
 ## Extension Patterns
 
 When extending the system, consider:

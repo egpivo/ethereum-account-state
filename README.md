@@ -90,6 +90,9 @@ ethereum-account-state/
 
 - **EthereumProvider**: RPC provider factory
 - **ContractRepository**: On-chain state repository
+  - **Design Choice**: Best-effort diagnostic mode (not fail-fast)
+  - State mismatches between storage and event reconstruction are logged but tolerated
+  - Suitable for educational/diagnostic purposes where event reconstruction may be incomplete
 
 ## Getting Started
 

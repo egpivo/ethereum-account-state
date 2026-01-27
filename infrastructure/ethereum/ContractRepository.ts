@@ -7,6 +7,12 @@ import { StateQueryService } from "../../application/services/StateQueryService.
 /**
  * @infrastructure ContractRepository
  * @description Implementation of ITokenRepository using on-chain queries
+ * 
+ * **Design Choice**: Best-effort diagnostic mode (not fail-fast)
+ * - State mismatches between storage and event reconstruction are logged but do not throw
+ * - This is intentional for educational/diagnostic purposes
+ * - Event reconstruction can be incomplete (missing pagination, reorg handling, etc.)
+ * - For production use, consider fail-fast behavior or storage-first reconciliation
  */
 export class ContractRepository implements ITokenRepository {
   constructor(
@@ -21,16 +27,18 @@ export class ContractRepository implements ITokenRepository {
         address
       );
 
-      // Verify against current storage state
+      // Verify against current storage state (best-effort diagnostic check)
       const totalSupply = await this.stateQueryService.getTotalSupply(address);
       const currentSupply = token.getTotalSupply();
 
       if (!totalSupply.equals(currentSupply)) {
-        // State mismatch - return null or throw?
-        // For now, we'll trust the reconstructed state
+        // State mismatch detected - best-effort diagnostic mode (not fail-fast)
+        // This is expected in educational/diagnostic contexts where event reconstruction
+        // may be incomplete (missing pagination, reorg handling, etc.)
         console.warn(
           `State mismatch for ${address.getValue()}: storage=${totalSupply.toString()}, derived=${currentSupply.toString()}`
         );
+        // Continue with reconstructed state for diagnostic purposes
       }
 
       return token;
