@@ -3,16 +3,33 @@ import { ethers } from 'ethers'
 import './App.css'
 
 // Token contract ABI (minimal - only functions we need)
+// Note: transfer does not return bool (contract has no return value)
 const TOKEN_ABI = [
   'function balanceOf(address account) external view returns (uint256)',
   'function totalSupply() external view returns (uint256)',
-  'function transfer(address to, uint256 amount) external returns (bool)',
+  'function transfer(address to, uint256 amount) external',
   'function mint(address to, uint256 amount) external',
   'function burn(uint256 amount) external',
   'event Transfer(address indexed from, address indexed to, uint256 amount)',
   'event Mint(address indexed to, uint256 amount)',
   'event Burn(address indexed from, uint256 amount)',
 ]
+
+// Get Etherscan URL based on chainId
+function getEtherscanUrl(chainId: bigint, txHash: string): string {
+  const chainIdNum = Number(chainId)
+  if (chainIdNum === 1) {
+    return `https://etherscan.io/tx/${txHash}`
+  } else if (chainIdNum === 11155111) {
+    return `https://sepolia.etherscan.io/tx/${txHash}`
+  } else if (chainIdNum === 31337) {
+    // Local Anvil
+    return `#`
+  } else {
+    // Fallback to mainnet
+    return `https://etherscan.io/tx/${txHash}`
+  }
+}
 
 function App() {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null)
@@ -28,7 +45,16 @@ function App() {
   const [burnAmount, setBurnAmount] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
-  const [events, setEvents] = useState<Array<{type: string, from: string, to: string, amount: string, txHash: string}>>([])
+  const [chainId, setChainId] = useState<bigint | null>(null)
+  const [events, setEvents] = useState<Array<{
+    type: string
+    from: string
+    to: string
+    amount: string
+    txHash: string
+    blockNumber: number
+    logIndex: number
+  }>>([])
 
   // Connect wallet
   const connectWallet = async () => {
@@ -41,19 +67,53 @@ function App() {
       const provider = new ethers.BrowserProvider(window.ethereum)
       const accounts = await provider.send('eth_requestAccounts', [])
       const signer = await provider.getSigner()
+      const network = await provider.getNetwork()
       
       setProvider(provider)
       setSigner(signer)
       setAccount(accounts[0])
+      setChainId(network.chainId)
       setError('')
     } catch (err: any) {
       setError(err.message || 'Failed to connect wallet')
     }
   }
 
+  // Validate address
+  const validateAddress = (address: string): boolean => {
+    try {
+      return ethers.isAddress(address)
+    } catch {
+      return false
+    }
+  }
+
+  // Validate amount (must be a valid integer string)
+  const validateAmount = (amount: string): { valid: boolean; error?: string } => {
+    if (!amount || amount.trim() === '') {
+      return { valid: false, error: 'Amount cannot be empty' }
+    }
+    // Check if it's a valid integer (no decimals)
+    if (!/^\d+$/.test(amount.trim())) {
+      return { valid: false, error: 'Amount must be a whole number (no decimals)' }
+    }
+    try {
+      BigInt(amount)
+      return { valid: true }
+    } catch {
+      return { valid: false, error: 'Invalid amount' }
+    }
+  }
+
   // Load balance
   const loadBalance = async () => {
     if (!provider || !tokenAddress || !account) return
+
+    // Validate token address
+    if (!validateAddress(tokenAddress)) {
+      setError('Invalid token contract address')
+      return
+    }
 
     try {
       const contract = new ethers.Contract(tokenAddress, TOKEN_ABI, provider)
@@ -76,6 +136,23 @@ function App() {
   const handleTransfer = async () => {
     if (!signer || !tokenAddress || !transferTo || !transferAmount) {
       setError('Please fill in all fields')
+      return
+    }
+
+    // Validate addresses
+    if (!validateAddress(tokenAddress)) {
+      setError('Invalid token contract address')
+      return
+    }
+    if (!validateAddress(transferTo)) {
+      setError('Invalid recipient address')
+      return
+    }
+
+    // Validate amount
+    const amountValidation = validateAmount(transferAmount)
+    if (!amountValidation.valid) {
+      setError(amountValidation.error || 'Invalid amount')
       return
     }
 
@@ -109,6 +186,23 @@ function App() {
       return
     }
 
+    // Validate addresses
+    if (!validateAddress(tokenAddress)) {
+      setError('Invalid token contract address')
+      return
+    }
+    if (!validateAddress(mintTo)) {
+      setError('Invalid recipient address')
+      return
+    }
+
+    // Validate amount
+    const amountValidation = validateAmount(mintAmount)
+    if (!amountValidation.valid) {
+      setError(amountValidation.error || 'Invalid amount')
+      return
+    }
+
     setLoading(true)
     setError('')
 
@@ -138,6 +232,19 @@ function App() {
       return
     }
 
+    // Validate token address
+    if (!validateAddress(tokenAddress)) {
+      setError('Invalid token contract address')
+      return
+    }
+
+    // Validate amount
+    const amountValidation = validateAmount(burnAmount)
+    if (!amountValidation.valid) {
+      setError(amountValidation.error || 'Invalid amount')
+      return
+    }
+
     setLoading(true)
     setError('')
 
@@ -163,6 +270,11 @@ function App() {
   const loadEvents = async () => {
     if (!provider || !tokenAddress) return
 
+    // Validate token address
+    if (!validateAddress(tokenAddress)) {
+      return
+    }
+
     try {
       const contract = new ethers.Contract(tokenAddress, TOKEN_ABI, provider)
       const currentBlock = await provider.getBlockNumber()
@@ -174,6 +286,16 @@ function App() {
         contract.queryFilter(contract.filters.Burn(), fromBlock),
       ])
 
+      // Track burn transactions to avoid duplicate display
+      // Contract emits both Burn and Transfer(..., address(0), ...) for burns
+      // We'll only show Transfer(..., address(0), ...) as "Burn" to avoid duplication
+      const burnTxHashes = new Set<string>()
+      for (const e of transferEvents) {
+        if (e.args.to === ethers.ZeroAddress) {
+          burnTxHashes.add(e.transactionHash)
+        }
+      }
+
       // Contract stores amounts as raw uint256 (no decimal scaling)
       // Display as-is without formatEther conversion
       const allEvents = [
@@ -183,22 +305,42 @@ function App() {
           to: e.args.to,
           amount: e.args.amount.toString(),
           txHash: e.transactionHash,
+          blockNumber: e.blockNumber,
+          logIndex: e.index !== null ? Number(e.index) : 0,
         })),
-        ...transferEvents.map((e: any) => ({
-          type: 'Transfer',
-          from: e.args.from,
-          to: e.args.to,
-          amount: e.args.amount.toString(),
-          txHash: e.transactionHash,
-        })),
-        ...burnEvents.map((e: any) => ({
-          type: 'Burn',
-          from: e.args.from,
-          to: '0x0000...0000',
-          amount: e.args.amount.toString(),
-          txHash: e.transactionHash,
-        })),
-      ].sort((a, b) => b.txHash.localeCompare(a.txHash))
+        ...transferEvents.map((e: any) => {
+          // If Transfer to address(0), display as "Burn" instead of "Transfer"
+          const isBurn = e.args.to === ethers.ZeroAddress
+          return {
+            type: isBurn ? 'Burn' : 'Transfer',
+            from: e.args.from,
+            to: isBurn ? '0x0000...0000' : e.args.to,
+            amount: e.args.amount.toString(),
+            txHash: e.transactionHash,
+            blockNumber: e.blockNumber,
+            logIndex: e.index !== null ? Number(e.index) : 0,
+          }
+        }),
+        // Only include Burn events that don't have a corresponding Transfer(..., address(0), ...)
+        ...burnEvents
+          .filter((e: any) => !burnTxHashes.has(e.transactionHash))
+          .map((e: any) => ({
+            type: 'Burn',
+            from: e.args.from,
+            to: '0x0000...0000',
+            amount: e.args.amount.toString(),
+            txHash: e.transactionHash,
+            blockNumber: e.blockNumber,
+            logIndex: e.index !== null ? Number(e.index) : 0,
+          })),
+      ]
+        // Sort by blockNumber (descending), then by logIndex (descending) for chronological order
+        .sort((a, b) => {
+          if (a.blockNumber !== b.blockNumber) {
+            return b.blockNumber - a.blockNumber
+          }
+          return b.logIndex - a.logIndex
+        })
 
       setEvents(allEvents.slice(0, 20)) // Last 20 events
     } catch (err: any) {
@@ -357,10 +499,15 @@ function App() {
                           <span>To: {event.to.slice(0, 6)}...{event.to.slice(-4)}</span>
                           <span>{event.amount} tokens</span>
                           <a
-                            href={`https://etherscan.io/tx/${event.txHash}`}
+                            href={chainId ? getEtherscanUrl(chainId, event.txHash) : '#'}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="tx-link"
+                            onClick={(e) => {
+                              if (!chainId || Number(chainId) === 31337) {
+                                e.preventDefault()
+                              }
+                            }}
                           >
                             View
                           </a>
