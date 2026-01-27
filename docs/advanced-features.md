@@ -75,7 +75,6 @@ balance.sub(amount).add(fee)
 
 ```solidity
 function transfer(address to, uint256 amount) external {
-    ReentrancyGuard.enter();  // tstore: 100 gas
     
     Balance amountBalance = BalanceLib.from(amount);
     Balance fromBalance = balances[msg.sender];
@@ -85,7 +84,6 @@ function transfer(address to, uint256 amount) external {
     balances[msg.sender] = fromBalance.sub(amountBalance);  // Type-safe
     balances[to] = balances[to].add(amountBalance);          // Readable
     
-    ReentrancyGuard.exit();
 }
 ```
 
@@ -94,5 +92,5 @@ This demonstrates: modern Solidity features, gas-efficient patterns, type safety
 ## Version Requirements
 
 - **Solidity**: ^0.8.28
-- **EVM Version**: Cancun (required for EIP-1153)
-- **Foundry**: Latest version with Cancun support
+- **EVM Version**: Cancun
+- **Foundry**: Latest version

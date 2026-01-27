@@ -154,7 +154,7 @@ See [Deployment Guide](./docs/deployment.md) for detailed instructions.
 - **[Authorization Model](./docs/authorization-model.md)**: Who can perform which operations and extension patterns
 - **[Execution Flow](./docs/execution-flow.md)**: Transaction lifecycle and state query flows
 - **[Advanced Features](./docs/advanced-features.md)**: Solidity 0.8.28 features (User-defined Value Types, Using Directives)
-- **[Future Work](./docs/future-work.md)**: Exploratory features and unused patterns (Transient Storage, Account entity, etc.)
+- **[Future Work](./docs/future-work.md)**: Exploratory features and unused patterns (Account entity, etc.)
 
 ## Testing Strategy
 
@@ -219,7 +219,6 @@ This ensures that off-chain reasoning (domain validation, state reconstruction) 
 ### Advanced Solidity Features (2026 Edition)
 
 - **User-defined Value Types**: Type-safe `Balance` to prevent logic errors
-- **Transient Storage (EIP-1153)**: Gas-efficient reentrancy protection using `tstore`/`tload` (200x cheaper than regular storage)
 - **Using Directives**: Financial-grade arithmetic operations
 
 See [Advanced Features Documentation](./docs/advanced-features.md) for details.
