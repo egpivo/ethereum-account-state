@@ -10,5 +10,5 @@ evm_version = "cancun"  # Required for EIP-1153 (Transient Storage)
 remappings = []
 
 [profile.ci]
-fuzz_runs = 256
-invariant_runs = 256
+fuzz.max_test_rejects = 65536
+invariant.max_test_rejects = 65536

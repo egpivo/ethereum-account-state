@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
 import {Token} from "../src/Token.sol";
@@ -15,7 +15,7 @@ contract DeployScript is Script {
         Token token = new Token();
         
         console.log("Token deployed at:", address(token));
-        console.log("Initial totalSupply:", token.totalSupply());
+        console.log("Initial totalSupply:", uint256(token.totalSupply()));
 
         vm.stopBroadcast();
         return token;
