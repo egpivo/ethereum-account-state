@@ -287,9 +287,11 @@ contract Token {
      *      - Burn(from, amount): Explicit burn event
      *      - Transfer(from, address(0), amount): ERC20 canonical supply reduction signal
      *      
-     *      The Transfer event is critical for event-based reconstruction,
-     *      as it follows ERC20 standard semantics where Transfer to address(0)
-     *      represents token destruction.
+     *      IMPORTANT for event-based reconstruction:
+     *      - Both events represent the SAME burn operation
+     *      - Reconstruction must use Transfer(..., address(0), ...) as canonical signal
+     *      - Burn events from the same transaction must be skipped to avoid double-counting
+     *      - This prevents violating the sum(balances) == totalSupply invariant
      * @param amount Amount to burn
      */
     function burn(uint256 amount) external {

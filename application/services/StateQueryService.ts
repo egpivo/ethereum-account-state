@@ -72,10 +72,11 @@ export class StateQueryService {
    * - Mint: Creates new tokens, increases totalSupply
    * - Transfer(to != address(0)): Moves tokens between accounts, totalSupply unchanged
    * - Transfer(to == address(0)): ERC20 canonical burn signal, decreases totalSupply
-   * - Burn: Explicit burn event (redundant if Transfer(..., address(0), ...) is present)
+   * - Burn: Explicit burn event (redundant with Transfer(..., address(0), ...))
    * 
-   * Note: The contract emits both Burn and Transfer(..., address(0), ...) for burns.
-   * This method processes both, but Transfer(..., address(0), ...) is the canonical signal.
+   * CRITICAL: The contract emits both Burn and Transfer(..., address(0), ...) for burns.
+   * To avoid double-counting, we use Transfer(..., address(0), ...) as the canonical signal
+   * and skip Burn events from the same transaction.
    */
   async reconstructStateFromEvents(
     tokenAddress: Address,
@@ -97,6 +98,10 @@ export class StateQueryService {
 
     const logs = await this.provider.getLogs(filter);
 
+    // Track which transactions have already processed a burn via Transfer(..., address(0), ...)
+    // This prevents double-counting when both Burn and Transfer(..., address(0), ...) are emitted
+    const processedBurnTxs = new Set<string>();
+
     for (const log of logs) {
       try {
         const parsed = tokenInterface.parseLog(log);
@@ -114,13 +119,22 @@ export class StateQueryService {
           if (to.isZero()) {
             // This is a burn via Transfer event
             token.burn(from, amount);
+            // Mark this transaction as having processed a burn
+            processedBurnTxs.add(log.transactionHash);
           } else {
             // Normal transfer
             token.transfer(from, to, amount);
           }
         } else if (parsed?.name === "Burn") {
-          // Explicit Burn event (redundant if Transfer(..., address(0), ...) was already processed)
-          // Process it anyway to ensure correctness even if Transfer event is missing
+          // Skip Burn events if we already processed Transfer(..., address(0), ...) from the same transaction
+          // This prevents double-counting: both events represent the same burn operation
+          if (processedBurnTxs.has(log.transactionHash)) {
+            // Already processed via Transfer(..., address(0), ...), skip to avoid double-count
+            continue;
+          }
+          
+          // Fallback: Process Burn event if Transfer(..., address(0), ...) was not emitted
+          // (This should not happen in our contract, but handles edge cases)
           const from = Address.from(parsed.args.from);
           const amount = Balance.from(parsed.args.amount);
           token.burn(from, amount);

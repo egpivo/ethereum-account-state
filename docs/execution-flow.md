@@ -62,12 +62,12 @@ StateQueryService.reconstructStateFromEvents()
     - Mint → balances[to] += amount, totalSupply += amount
     - Transfer(to != 0) → balances[from] -= amount, balances[to] += amount
     - Transfer(to == 0) → balances[from] -= amount, totalSupply -= amount (burn)
-    - Burn → balances[from] -= amount, totalSupply -= amount
+    - Burn → Skip if Transfer(..., address(0), ...) from same tx already processed
     ↓
 [Result] Reconstructed Token entity
 ```
 
-**Note**: `Transfer(..., address(0), ...)` is the canonical burn signal. Reconstruction can rely solely on `Transfer` events.
+**Critical**: The contract emits both `Burn` and `Transfer(..., address(0), ...)` for burns. To prevent double-counting, reconstruction uses `Transfer(..., address(0), ...)` as the canonical signal and skips `Burn` events from the same transaction.
 
 ## Separation of Concerns
 
