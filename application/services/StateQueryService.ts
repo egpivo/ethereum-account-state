@@ -103,9 +103,15 @@ export class StateQueryService {
 
     // Group logs by transaction hash to handle out-of-order events within the same transaction
     // This prevents double-counting when Burn events come before Transfer(..., address(0), ...) events
-    const logsByTx = new Map<string, Array<{ log: ethers.Log; parsed: ethers.LogDescription; logIndex: number }>>();
+    const logsByTx = new Map<string, Array<{ 
+      log: ethers.Log; 
+      parsed: ethers.LogDescription; 
+      blockNumber: number;
+      transactionIndex: number;
+      logIndex: number;
+    }>>();
     
-    // First pass: parse and group all logs by transaction, preserving logIndex for chronological ordering
+    // First pass: parse and group all logs by transaction, preserving ordering information
     for (const log of logs) {
       try {
         const parsed = tokenInterface.parseLog(log);
@@ -114,17 +120,18 @@ export class StateQueryService {
           if (!logsByTx.has(txHash)) {
             logsByTx.set(txHash, []);
           }
-          // Preserve logIndex for chronological ordering within transaction
-          // Use blockNumber, transactionIndex, and log.index to determine order
-          // For logs within the same transaction, log.index (block-level log index) provides chronological order
-          const logIndex = log.index !== null && log.index !== undefined 
-            ? Number(log.index) 
-            : (log.blockNumber !== null && log.transactionIndex !== null
-                ? Number(log.blockNumber) * 1000000 + Number(log.transactionIndex) * 1000
-                : 0);
+          
+          // Extract ordering information for robust sorting
+          // Use blockNumber, transactionIndex, and log.index for tuple-based sorting
+          const blockNumber = log.blockNumber !== null ? Number(log.blockNumber) : 0;
+          const transactionIndex = log.transactionIndex !== null ? Number(log.transactionIndex) : 0;
+          const logIndex = log.index !== null && log.index !== undefined ? Number(log.index) : 0;
+          
           logsByTx.get(txHash)!.push({ 
             log, 
-            parsed, 
+            parsed,
+            blockNumber,
+            transactionIndex,
             logIndex
           });
         }
@@ -135,19 +142,49 @@ export class StateQueryService {
     }
 
     // Second pass: process logs grouped by transaction, in chronological order
-    // Sort by logIndex within each transaction to process events in the order they occurred
-    // This ensures that if a transaction mints tokens before transferring them, the mint is processed first
-    for (const [txHash, txLogs] of logsByTx.entries()) {
-      // Sort logs by logIndex to process in chronological order
-      const sortedLogs = txLogs.sort((a, b) => a.logIndex - b.logIndex);
+    // First, sort transactions by blockNumber + transactionIndex to ensure correct cross-transaction ordering
+    // This does not rely on getLogs() return order, which may not be guaranteed
+    const sortedTxEntries = Array.from(logsByTx.entries()).sort((a, b) => {
+      // Get minimum blockNumber and transactionIndex for each transaction
+      const aMin = a[1].reduce((min, log) => {
+        if (log.blockNumber < min.blockNumber || 
+            (log.blockNumber === min.blockNumber && log.transactionIndex < min.transactionIndex)) {
+          return { blockNumber: log.blockNumber, transactionIndex: log.transactionIndex };
+        }
+        return min;
+      }, { blockNumber: a[1][0].blockNumber, transactionIndex: a[1][0].transactionIndex });
       
-      // Track if this transaction has already processed a burn operation
-      // The contract emits both Burn and Transfer(..., address(0), ...) for the same burn
-      // We need to process only ONE of them, regardless of which comes first
-      let burnProcessed = false;
+      const bMin = b[1].reduce((min, log) => {
+        if (log.blockNumber < min.blockNumber || 
+            (log.blockNumber === min.blockNumber && log.transactionIndex < min.transactionIndex)) {
+          return { blockNumber: log.blockNumber, transactionIndex: log.transactionIndex };
+        }
+        return min;
+      }, { blockNumber: b[1][0].blockNumber, transactionIndex: b[1][0].transactionIndex });
       
-      // Process events in chronological order (by logIndex)
-      for (const { parsed } of sortedLogs) {
+      // Sort by blockNumber first, then transactionIndex
+      if (aMin.blockNumber !== bMin.blockNumber) {
+        return aMin.blockNumber - bMin.blockNumber;
+      }
+      return aMin.transactionIndex - bMin.transactionIndex;
+    });
+    
+    // Track processed burns using a composite key: txHash + from + amount + logIndex
+    // This allows multiple burns in the same transaction (e.g., batch operations) to be processed correctly
+    // while still preventing double-counting of the same burn event (Burn + Transfer(..., address(0), ...))
+    const processedBurns = new Set<string>();
+    
+    for (const [txHash, txLogs] of sortedTxEntries) {
+      // Sort logs within transaction by tuple: (blockNumber, transactionIndex, logIndex)
+      // This ensures chronological order even if log.index is missing
+      const sortedLogs = txLogs.sort((a, b) => {
+        if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;
+        if (a.transactionIndex !== b.transactionIndex) return a.transactionIndex - b.transactionIndex;
+        return a.logIndex - b.logIndex;
+      });
+      
+      // Process events in chronological order
+      for (const { parsed, log, logIndex } of sortedLogs) {
         if (parsed.name === "Mint") {
           const to = Address.from(parsed.args.to);
           const amount = Balance.from(parsed.args.amount);
@@ -159,30 +196,34 @@ export class StateQueryService {
           
           // Transfer to address(0) is the ERC20 canonical burn signal
           if (to.isZero()) {
-            // This is a burn via Transfer event
-            // Only process if we haven't already processed a burn for this transaction
-            if (!burnProcessed) {
+            // Create a composite key for this burn: txHash + from + amount + logIndex
+            // This allows multiple burns in the same transaction while preventing duplicate processing
+            const burnKey = `${txHash}:${from.getValue()}:${amount.toString()}:${logIndex}`;
+            
+            // Only process if this specific burn hasn't been processed yet
+            // (either via this Transfer event or a corresponding Burn event)
+            if (!processedBurns.has(burnKey)) {
               token.burn(from, amount);
-              burnProcessed = true;
+              processedBurns.add(burnKey);
             }
-            // If burnProcessed is true, this Transfer(..., address(0), ...) is redundant
-            // (a Burn event was already processed earlier in this transaction)
           } else {
             // Normal transfer
             token.transfer(from, to, amount);
           }
         } else if (parsed.name === "Burn") {
-          // Only process Burn event if we haven't already processed a burn for this transaction
-          // The contract emits Burn BEFORE Transfer(..., address(0), ...), so this check
-          // prevents double-counting when Transfer(..., address(0), ...) comes later
-          if (!burnProcessed) {
-            const from = Address.from(parsed.args.from);
-            const amount = Balance.from(parsed.args.amount);
+          const from = Address.from(parsed.args.from);
+          const amount = Balance.from(parsed.args.amount);
+          
+          // Create the same composite key for this burn
+          // If Transfer(..., address(0), ...) was already processed, this Burn will be skipped
+          const burnKey = `${txHash}:${from.getValue()}:${amount.toString()}:${logIndex}`;
+          
+          // Only process if this specific burn hasn't been processed yet
+          // (either via this Burn event or a corresponding Transfer(..., address(0), ...) event)
+          if (!processedBurns.has(burnKey)) {
             token.burn(from, amount);
-            burnProcessed = true;
+            processedBurns.add(burnKey);
           }
-          // If burnProcessed is true, this Burn event is redundant
-          // (a Transfer(..., address(0), ...) was already processed earlier, or another Burn was processed)
         }
       }
     }
