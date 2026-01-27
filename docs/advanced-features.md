@@ -87,7 +87,7 @@ function transfer(address to, uint256 amount) external {
 }
 ```
 
-This demonstrates: modern Solidity features, gas-efficient patterns, type safety, protocol-grade quality.
+This demonstrates: modern Solidity features, type safety, protocol-grade quality.
 
 ## Version Requirements
 
