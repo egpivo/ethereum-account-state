@@ -21,7 +21,8 @@ This document defines the state machine for the Token contract, including state 
 - Burn: Both `totalSupply` and `balances[from]` decrease by the same amount
 
 **Verification Methods** (off-chain):
-1. Event reconstruction: Replay events and verify `sum(balances) == totalSupply`
+1. Event reconstruction: Replay events and verify `sum(balances) == totalSupply` (educational/diagnostic)
+   - **Boundary**: Not a verifier; can be incomplete without pagination, reorg handling, or storage-first reconciliation
 2. Testing: Track known accounts and verify the invariant
 3. Formal verification: Prove mathematically that transitions preserve the invariant
 

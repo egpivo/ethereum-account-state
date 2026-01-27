@@ -68,6 +68,9 @@ export class StateQueryService {
   /**
    * Reconstruct token state from events (historical state)
    * 
+   * **Important Boundary**: This is an educational and diagnostic technique, not a verifier.
+   * It can be incomplete without pagination, reorg handling, or storage-first reconciliation.
+   * 
    * Event Semantics:
    * - Mint: Creates new tokens, increases totalSupply
    * - Transfer(to != address(0)): Moves tokens between accounts, totalSupply unchanged
@@ -149,7 +152,10 @@ export class StateQueryService {
   }
 
   /**
-   * Compare storage state vs derived state (for verification)
+   * Compare storage state vs derived state (for diagnostic purposes)
+   * 
+   * **Note**: This is a diagnostic tool, not a production verifier.
+   * Event-based reconstruction can be incomplete (see reconstructStateFromEvents).
    */
   async compareState(
     tokenAddress: Address,

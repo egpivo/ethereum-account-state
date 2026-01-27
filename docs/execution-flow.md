@@ -74,6 +74,13 @@ StateQueryService.reconstructStateFromEvents()
 
 **Critical**: The contract emits both `Burn` and `Transfer(..., address(0), ...)` for burns. To prevent double-counting, reconstruction uses `Transfer(..., address(0), ...)` as the canonical signal and skips `Burn` events from the same transaction.
 
+**Important Boundary**: Event-based reconstruction is used as an **educational and diagnostic technique**. It is **not a verifier** and can be incomplete without:
+- Pagination (for large event histories)
+- Reorg handling (for chain reorganizations)
+- Storage-first reconciliation (for production accuracy)
+
+This implementation demonstrates the concept but should not be relied upon as the sole source of truth in production systems.
+
 ## Separation of Concerns
 
 ### Wallet ≠ State ≠ Authority
