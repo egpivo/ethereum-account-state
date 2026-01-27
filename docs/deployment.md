@@ -30,16 +30,21 @@ npm run deploy:sepolia
 #### Option 2: Manual Deployment
 
 ```bash
-# Set your private key
+# Export private key (required for vm.envUint() in script)
 export PRIVATE_KEY=your_private_key_here
+
+# Optional: Set RPC URL
+export SEPOLIA_RPC_URL=https://rpc.sepolia.dev
 
 # Deploy to Sepolia
 forge script contracts/script/DeploySepolia.s.sol:DeploySepolia \
     --rpc-url https://rpc.sepolia.dev \
     --broadcast \
-    --verify \
+    ${ETHERSCAN_API_KEY:+--verify --etherscan-api-key "$ETHERSCAN_API_KEY"} \
     -vvv
 ```
+
+**Important**: The `export` command is required because `vm.envUint("PRIVATE_KEY")` reads from environment variables, not from `.env` file directly.
 
 ### Configuration
 

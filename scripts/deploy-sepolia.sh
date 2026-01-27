@@ -19,8 +19,10 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-# Load environment variables
+# Load environment variables and export them to child processes
+set -a  # Automatically export all variables
 source .env
+set +a  # Stop automatically exporting
 
 # Check if PRIVATE_KEY is set
 if [ -z "$PRIVATE_KEY" ]; then
@@ -32,14 +34,15 @@ fi
 RPC_URL="${SEPOLIA_RPC_URL:-https://rpc.sepolia.dev}"
 
 echo "📡 Using RPC: $RPC_URL"
+echo "🔑 Private key loaded (last 4 chars: ${PRIVATE_KEY: -4})"
 echo ""
 
 # Deploy contract
+# PRIVATE_KEY is now exported and available to forge via vm.envUint()
 forge script contracts/script/DeploySepolia.s.sol:DeploySepolia \
     --rpc-url "$RPC_URL" \
     --broadcast \
-    --verify \
-    --etherscan-api-key "${ETHERSCAN_API_KEY:-}" \
+    ${ETHERSCAN_API_KEY:+--verify --etherscan-api-key "$ETHERSCAN_API_KEY"} \
     -vvv
 
 echo ""
