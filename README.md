@@ -74,6 +74,12 @@ ethereum-account-state/
 
 **Key Separation**: Wallet ≠ State ≠ Authority
 
+**Important Design Note**: 
+- **Minting is intentionally permissionless** in this minimal implementation
+- **Authority separation** (wallet ≠ state ≠ authority) is presented as a **conceptual model**, not an enforced on-chain property
+- This is a design choice for educational/testing purposes, not a missing feature
+- For production use, see [Authorization Model](./docs/authorization-model.md) for extension patterns
+
 **Domain Integration**: Application services actively use domain entities and services:
 - `WalletService` uses `StateTransition` validation to prevent invalid transactions
 - `StateQueryService` uses `Token` entity for state reconstruction and invariant verification

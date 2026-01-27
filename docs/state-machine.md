@@ -31,7 +31,10 @@ This document defines the state machine for the Token contract, including state 
 
 **Function**: `mint(address to, uint256 amount)`
 
-**Authorization**: Public (anyone can call) - suitable for educational/testing. For production, add restrictions.
+**Authorization**: **Intentionally permissionless** (anyone can call)
+- This is a **design choice** for this minimal implementation, not a missing feature
+- Suitable for educational/testing purposes where state machine correctness is the focus
+- For production use, see [Authorization Model](./authorization-model.md) for extension patterns
 
 **Preconditions**: `to != address(0)`, `amount > 0`
 

@@ -78,6 +78,8 @@ StateQueryService.reconstructStateFromEvents()
 
 ### Wallet ≠ State ≠ Authority
 
+**Important**: This separation is a **conceptual model** for understanding the system architecture, not an enforced on-chain property in this minimal implementation.
+
 **Wallet** (`WalletService`):
 - Owns private key, signs transactions, submits to network
 - Does NOT manage state
@@ -86,10 +88,11 @@ StateQueryService.reconstructStateFromEvents()
 - Maintains balances, enforces rules, emits events
 - Does NOT know about wallets
 
-**Authority**:
-- Determined by private key ownership
-- Verified by ECDSA signature
-- Enforced by EVM (msg.sender)
+**Authority** (Conceptual):
+- In this minimal implementation: **Minting is intentionally permissionless**
+- Authority separation is presented as a conceptual model for understanding system design
+- For production use, authority would be enforced on-chain (see [Authorization Model](../docs/authorization-model.md))
+- In production: Determined by private key ownership, verified by ECDSA signature, enforced by EVM (msg.sender) and access control
 
 ## Transaction Lifecycle
 
