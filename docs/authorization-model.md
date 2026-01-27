@@ -4,6 +4,12 @@
 
 This document defines the authorization model for the Token contract.
 
+**Important Design Note**: 
+- **Minting is intentionally permissionless** in this minimal implementation
+- **Authority separation** (wallet ≠ state ≠ authority) is presented as a **conceptual model**, not an enforced on-chain property
+- This is a design choice for educational/testing purposes, demonstrating state machine correctness without access control complexity
+- For production use, implement the extension patterns described in this document
+
 ## Current Authorization Model
 
 | Operation | Authorization | Mechanism |
