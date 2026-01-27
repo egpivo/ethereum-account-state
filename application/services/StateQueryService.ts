@@ -141,9 +141,10 @@ export class StateQueryService {
       // Sort logs by logIndex to process in chronological order
       const sortedLogs = txLogs.sort((a, b) => a.logIndex - b.logIndex);
       
-      // Track if this transaction has a burn via Transfer(..., address(0), ...)
-      // This is used to skip redundant Burn events from the same transaction
-      let hasTransferBurn = false;
+      // Track if this transaction has already processed a burn operation
+      // The contract emits both Burn and Transfer(..., address(0), ...) for the same burn
+      // We need to process only ONE of them, regardless of which comes first
+      let burnProcessed = false;
       
       // Process events in chronological order (by logIndex)
       for (const { parsed } of sortedLogs) {
@@ -159,25 +160,29 @@ export class StateQueryService {
           // Transfer to address(0) is the ERC20 canonical burn signal
           if (to.isZero()) {
             // This is a burn via Transfer event
-            token.burn(from, amount);
-            hasTransferBurn = true;
+            // Only process if we haven't already processed a burn for this transaction
+            if (!burnProcessed) {
+              token.burn(from, amount);
+              burnProcessed = true;
+            }
+            // If burnProcessed is true, this Transfer(..., address(0), ...) is redundant
+            // (a Burn event was already processed earlier in this transaction)
           } else {
             // Normal transfer
             token.transfer(from, to, amount);
           }
         } else if (parsed.name === "Burn") {
-          // Skip Burn events if we already processed Transfer(..., address(0), ...) from the same transaction
-          // This prevents double-counting: both events represent the same burn operation
-          if (hasTransferBurn) {
-            // Already processed via Transfer(..., address(0), ...), skip to avoid double-count
-            continue;
+          // Only process Burn event if we haven't already processed a burn for this transaction
+          // The contract emits Burn BEFORE Transfer(..., address(0), ...), so this check
+          // prevents double-counting when Transfer(..., address(0), ...) comes later
+          if (!burnProcessed) {
+            const from = Address.from(parsed.args.from);
+            const amount = Balance.from(parsed.args.amount);
+            token.burn(from, amount);
+            burnProcessed = true;
           }
-          
-          // Fallback: Process Burn event if Transfer(..., address(0), ...) was not emitted
-          // (This should not happen in our contract, but handles edge cases)
-          const from = Address.from(parsed.args.from);
-          const amount = Balance.from(parsed.args.amount);
-          token.burn(from, amount);
+          // If burnProcessed is true, this Burn event is redundant
+          // (a Transfer(..., address(0), ...) was already processed earlier, or another Burn was processed)
         }
       }
     }
