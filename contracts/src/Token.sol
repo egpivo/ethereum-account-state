@@ -23,7 +23,6 @@ pragma solidity ^0.8.28;
  * 
  * Advanced Features (2026 Edition):
  * - User-defined Value Types: Type-safe Balance to prevent logic errors
- * - Transient Storage (EIP-1153): Gas-efficient reentrancy protection using tstore/tload
  * - Using directives: Financial-grade arithmetic operations
  * 
  * State Machine Rules:
@@ -93,60 +92,6 @@ library BalanceLib {
     }
 }
 
-// ============ Reentrancy Guard using Transient Storage ============
-
-/**
- * @notice Reentrancy guard using EIP-1153 transient storage
- * @dev Transient storage (tstore/tload) is much cheaper than regular storage (sstore/sload)
- *      - tstore: 100 gas (vs sstore: 20,000 gas for first write)
- *      - tload: 100 gas (vs sload: 2,100 gas)
- *      Automatically cleared at end of transaction, perfect for reentrancy guards
- */
-library ReentrancyGuard {
-    // Transient storage slot for reentrancy guard
-    // Using keccak256("ReentrancyGuard") as slot to avoid collisions
-    uint256 private constant REENTRANCY_GUARD_SLOT = uint256(keccak256("ReentrancyGuard"));
-
-    /// @notice Check if already entered (using transient storage)
-    function isEntered() internal view returns (bool) {
-        // tload: 100 gas (vs sload: 2,100 gas)
-        uint256 slot = REENTRANCY_GUARD_SLOT;
-        uint256 value;
-        assembly {
-            value := tload(slot)
-        }
-        return value != 0;
-    }
-
-    /// @notice Enter critical section
-    function enter() internal {
-        // tstore: 100 gas (vs sstore: 20,000 gas)
-        uint256 slot = REENTRANCY_GUARD_SLOT;
-        assembly {
-            tstore(slot, 1)
-        }
-    }
-
-    /// @notice Exit critical section (automatically cleared at end of tx, but explicit for clarity)
-    function exit() internal {
-        // Clear transient storage (though it auto-clears at end of transaction)
-        uint256 slot = REENTRANCY_GUARD_SLOT;
-        assembly {
-            tstore(slot, 0)
-        }
-    }
-
-    /// @notice Modifier to prevent reentrancy
-    modifier nonReentrant() {
-        if (isEntered()) revert ReentrantCall();
-        enter();
-        _;
-        exit();
-    }
-
-    error ReentrantCall();
-}
-
 // ============ Main Contract ============
 
 contract Token {
@@ -211,23 +156,18 @@ contract Token {
      * @param amount Amount to mint
      */
     function mint(address to, uint256 amount) external {
-        ReentrancyGuard.enter();
-        
         if (to == address(0)) {
-            ReentrancyGuard.exit();
             revert ZeroAddress();
         }
         
         Balance amountBalance = BalanceLib.from(amount);
         if (BalanceLib.eq(amountBalance, BalanceLib.zero())) {
-            ReentrancyGuard.exit();
             revert ZeroAmount();
         }
         
         totalSupply = totalSupply.add(amountBalance);
         balances[to] = balances[to].add(amountBalance);
         
-        ReentrancyGuard.exit();
         emit Mint(to, amount);
     }
     
@@ -243,24 +183,19 @@ contract Token {
      * @param amount Amount to transfer
      */
     function transfer(address to, uint256 amount) external {
-        ReentrancyGuard.enter();
-        
         address from = msg.sender;
         
         if (to == address(0)) {
-            ReentrancyGuard.exit();
             revert ZeroAddress();
         }
         
         Balance amountBalance = BalanceLib.from(amount);
         if (BalanceLib.eq(amountBalance, BalanceLib.zero())) {
-            ReentrancyGuard.exit();
             revert ZeroAmount();
         }
         
         Balance fromBalance = balances[from];
         if (!fromBalance.gte(amountBalance)) {
-            ReentrancyGuard.exit();
             revert InsufficientBalance(
                 from,
                 BalanceLib.unwrap(amountBalance),
@@ -271,7 +206,6 @@ contract Token {
         balances[from] = fromBalance.sub(amountBalance);
         balances[to] = balances[to].add(amountBalance);
         
-        ReentrancyGuard.exit();
         emit Transfer(from, to, amount);
     }
     
@@ -295,19 +229,15 @@ contract Token {
      * @param amount Amount to burn
      */
     function burn(uint256 amount) external {
-        ReentrancyGuard.enter();
-        
         address from = msg.sender;
         
         Balance amountBalance = BalanceLib.from(amount);
         if (BalanceLib.eq(amountBalance, BalanceLib.zero())) {
-            ReentrancyGuard.exit();
             revert ZeroAmount();
         }
         
         Balance fromBalance = balances[from];
         if (!fromBalance.gte(amountBalance)) {
-            ReentrancyGuard.exit();
             revert InsufficientBalance(
                 from,
                 BalanceLib.unwrap(amountBalance),
@@ -317,8 +247,6 @@ contract Token {
         
         totalSupply = totalSupply.sub(amountBalance);
         balances[from] = fromBalance.sub(amountBalance);
-        
-        ReentrancyGuard.exit();
         
         // Emit both events for canonical semantics
         emit Burn(from, amount);

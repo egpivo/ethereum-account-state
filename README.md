@@ -59,18 +59,24 @@ ethereum-account-state/
 
 **Purpose**: Encapsulate business rules and domain concepts.
 
-- **Entities**: `Account`, `Token`
-- **Value Objects**: `Address`, `Balance`
-- **Services**: `StateTransition` (validation)
+- **Entities**: `Token` (used in state reconstruction)
+- **Value Objects**: `Address`, `Balance` (used throughout)
+- **Services**: `StateTransition` (validation, used by `WalletService`)
+
+**Note**: Some domain entities (e.g., `Account`) are defined but not actively used in current implementation. See [Future Work](./docs/future-work.md) for details.
 
 ### 3. Application Layer (Use Cases)
 
 **Purpose**: Orchestrate domain objects to fulfill use cases.
 
-- **WalletService**: Wallet operations (signing, sending transactions)
-- **StateQueryService**: State querying (storage reads, event reconstruction)
+- **WalletService**: Wallet operations with domain validation (uses `StateTransition` for pre-transaction validation)
+- **StateQueryService**: State querying using domain entities (uses `Token` entity for event-based reconstruction)
 
 **Key Separation**: Wallet ≠ State ≠ Authority
+
+**Domain Integration**: Application services actively use domain entities and services:
+- `WalletService` uses `StateTransition` validation to prevent invalid transactions
+- `StateQueryService` uses `Token` entity for state reconstruction and invariant verification
 
 ### 4. Infrastructure Layer (External Dependencies)
 
@@ -147,7 +153,8 @@ See [Deployment Guide](./docs/deployment.md) for detailed instructions.
 - **[State Machine Specification](./docs/state-machine.md)**: Token state machine, transitions, invariants, and verification methods
 - **[Authorization Model](./docs/authorization-model.md)**: Who can perform which operations and extension patterns
 - **[Execution Flow](./docs/execution-flow.md)**: Transaction lifecycle and state query flows
-- **[Advanced Features](./docs/advanced-features.md)**: Solidity 0.8.28 features (User-defined Value Types, Transient Storage, Using Directives)
+- **[Advanced Features](./docs/advanced-features.md)**: Solidity 0.8.28 features (User-defined Value Types, Using Directives)
+- **[Future Work](./docs/future-work.md)**: Exploratory features and unused patterns (Transient Storage, Account entity, etc.)
 
 ## Testing Strategy
 

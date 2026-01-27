@@ -18,12 +18,12 @@ async function main() {
   const privateKey = process.env.PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // Anvil default
   const wallet = new ethers.Wallet(privateKey, provider);
   
-  // Initialize services
-  const walletService = new WalletService(provider, wallet);
-  const stateQueryService = new StateQueryService(provider);
-  
   // Token contract address (deploy first using Deploy.s.sol)
   const tokenAddress = Address.from(process.env.TOKEN_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3");
+  
+  // Initialize services (WalletService now requires tokenAddress for domain validation)
+  const walletService = new WalletService(provider, wallet, tokenAddress);
+  const stateQueryService = new StateQueryService(provider);
   
   console.log("Wallet address:", walletService.getAddress().getValue());
   console.log("Token address:", tokenAddress.getValue());
@@ -58,7 +58,6 @@ async function main() {
   
   try {
     const receipt = await walletService.transfer(
-      tokenAddress,
       recipient,
       transferAmount
     );

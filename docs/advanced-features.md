@@ -41,38 +41,7 @@ Balance amount2 = BalanceLib.from(500);
 Balance total = amount1.add(amount2); // Type-safe
 ```
 
-## 2. Transient Storage (EIP-1153)
-
-**What**: Storage that persists only during a single transaction, automatically cleared at the end.
-
-**Gas Costs**:
-- `tstore`: 100 gas (vs `sstore`: 20,000 gas first write)
-- `tload`: 100 gas (vs `sload`: 2,100 gas cold read)
-
-**Implementation**:
-```solidity
-library ReentrancyGuard {
-    uint256 private constant REENTRANCY_GUARD_SLOT = 
-        uint256(keccak256("ReentrancyGuard"));
-
-    function enter() internal {
-        uint256 slot = REENTRANCY_GUARD_SLOT;
-        assembly {
-            tstore(slot, 1)
-        }
-    }
-}
-```
-
-**Context**: This minimal token doesn't strictly need reentrancy guard (no external calls), but we include it for:
-1. **Defensive Programming**: Future extensions may introduce reentrancy risks
-2. **Educational Value**: Demonstrates proper use of transient storage
-3. **Minimal Cost**: Only ~200 gas per operation
-4. **Best Practice**: Following security best practices from the start
-
-**When to Use**: Reentrancy guards, temporary flags, cross-function state within a transaction.
-
-## 3. Using Directives
+## 2. Using Directives
 
 **What**: Attach library functions to types, enabling method-style syntax.
 
