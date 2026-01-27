@@ -103,9 +103,9 @@ export class StateQueryService {
 
     // Group logs by transaction hash to handle out-of-order events within the same transaction
     // This prevents double-counting when Burn events come before Transfer(..., address(0), ...) events
-    const logsByTx = new Map<string, Array<{ log: ethers.Log; parsed: ethers.LogDescription }>>();
+    const logsByTx = new Map<string, Array<{ log: ethers.Log; parsed: ethers.LogDescription; logIndex: number }>>();
     
-    // First pass: parse and group all logs by transaction
+    // First pass: parse and group all logs by transaction, preserving logIndex for chronological ordering
     for (const log of logs) {
       try {
         const parsed = tokenInterface.parseLog(log);
@@ -114,7 +114,13 @@ export class StateQueryService {
           if (!logsByTx.has(txHash)) {
             logsByTx.set(txHash, []);
           }
-          logsByTx.get(txHash)!.push({ log, parsed });
+          // Preserve logIndex for chronological ordering within transaction
+          // logIndex is the index of the log in the transaction's logs array
+          logsByTx.get(txHash)!.push({ 
+            log, 
+            parsed, 
+            logIndex: log.index !== null ? log.index : 0 
+          });
         }
       } catch (error) {
         // Skip unparseable logs
@@ -122,16 +128,24 @@ export class StateQueryService {
       }
     }
 
-    // Second pass: process logs grouped by transaction
-    // For each transaction, process Transfer events first, then Burn events
-    // This ensures Transfer(..., address(0), ...) is processed before Burn, preventing double-counting
+    // Second pass: process logs grouped by transaction, in chronological order
+    // Sort by logIndex within each transaction to process events in the order they occurred
+    // This ensures that if a transaction mints tokens before transferring them, the mint is processed first
     for (const [txHash, txLogs] of logsByTx.entries()) {
+      // Sort logs by logIndex to process in chronological order
+      const sortedLogs = txLogs.sort((a, b) => a.logIndex - b.logIndex);
+      
       // Track if this transaction has a burn via Transfer(..., address(0), ...)
+      // This is used to skip redundant Burn events from the same transaction
       let hasTransferBurn = false;
       
-      // Process Transfer events first
-      for (const { parsed } of txLogs) {
-        if (parsed.name === "Transfer") {
+      // Process events in chronological order (by logIndex)
+      for (const { parsed } of sortedLogs) {
+        if (parsed.name === "Mint") {
+          const to = Address.from(parsed.args.to);
+          const amount = Balance.from(parsed.args.amount);
+          token.mint(to, amount);
+        } else if (parsed.name === "Transfer") {
           const from = Address.from(parsed.args.from);
           const to = Address.from(parsed.args.to);
           const amount = Balance.from(parsed.args.amount);
@@ -145,21 +159,7 @@ export class StateQueryService {
             // Normal transfer
             token.transfer(from, to, amount);
           }
-        }
-      }
-      
-      // Process Mint events
-      for (const { parsed } of txLogs) {
-        if (parsed.name === "Mint") {
-          const to = Address.from(parsed.args.to);
-          const amount = Balance.from(parsed.args.amount);
-          token.mint(to, amount);
-        }
-      }
-      
-      // Process Burn events last - skip if Transfer(..., address(0), ...) was already processed
-      for (const { parsed } of txLogs) {
-        if (parsed.name === "Burn") {
+        } else if (parsed.name === "Burn") {
           // Skip Burn events if we already processed Transfer(..., address(0), ...) from the same transaction
           // This prevents double-counting: both events represent the same burn operation
           if (hasTransferBurn) {
