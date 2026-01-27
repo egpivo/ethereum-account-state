@@ -33,10 +33,19 @@ export class Token {
    * @domain State Transition: Mint tokens
    * @invariant sum(balances) == totalSupply must hold after this operation
    *           (Guaranteed by construction, cannot be verified on-chain)
+   * 
+   * @dev Validation rules MUST mirror on-chain contract rules:
+   *      - to != address(0) (reverts ZeroAddress)
+   *      - amount > 0 (reverts ZeroAmount)
+   *      This ensures off-chain reasoning matches on-chain behavior.
    */
   mint(to: Address, amount: Balance): void {
     if (to.isZero()) {
       throw new Error("Cannot mint to zero address");
+    }
+
+    if (amount.getValue() === 0n) {
+      throw new Error("Mint amount must be greater than zero");
     }
 
     const currentBalance = this.getBalance(to);
@@ -48,10 +57,20 @@ export class Token {
    * @domain State Transition: Transfer tokens
    * @invariant sum(balances) == totalSupply must hold after this operation
    *           (Guaranteed by construction, cannot be verified on-chain)
+   * 
+   * @dev Validation rules MUST mirror on-chain contract rules:
+   *      - to != address(0) (reverts ZeroAddress)
+   *      - amount > 0 (reverts ZeroAmount)
+   *      - balances[from] >= amount (reverts InsufficientBalance)
+   *      This ensures off-chain reasoning matches on-chain behavior.
    */
   transfer(from: Address, to: Address, amount: Balance): void {
     if (to.isZero()) {
       throw new Error("Cannot transfer to zero address");
+    }
+
+    if (amount.getValue() === 0n) {
+      throw new Error("Transfer amount must be greater than zero");
     }
 
     const fromBalance = this.getBalance(from);
@@ -69,8 +88,17 @@ export class Token {
    * @domain State Transition: Burn tokens
    * @invariant sum(balances) == totalSupply must hold after this operation
    *           (Guaranteed by construction, cannot be verified on-chain)
+   * 
+   * @dev Validation rules MUST mirror on-chain contract rules:
+   *      - amount > 0 (reverts ZeroAmount)
+   *      - balances[from] >= amount (reverts InsufficientBalance)
+   *      This ensures off-chain reasoning matches on-chain behavior.
    */
   burn(from: Address, amount: Balance): void {
+    if (amount.getValue() === 0n) {
+      throw new Error("Burn amount must be greater than zero");
+    }
+
     const fromBalance = this.getBalance(from);
     if (!fromBalance.isGreaterThanOrEqual(amount)) {
       throw new Error("Insufficient balance for burn");

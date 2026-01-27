@@ -97,10 +97,34 @@ The following operations revert:
 3. Insufficient balance (transfer/burn)
 4. Any operation that would violate `sum(balances) == totalSupply` (prevented by design)
 
+## Off-Chain Model Consistency
+
+**Critical Requirement**: Off-chain domain models (TypeScript `Token` entity) **must mirror** on-chain contract rules exactly.
+
+### Validation Rules Alignment
+
+| On-Chain (Solidity) | Off-Chain (TypeScript) | Consistency |
+|---------------------|------------------------|-------------|
+| `revert ZeroAddress` | `throw Error("Cannot ... to zero address")` | ✅ Matched |
+| `revert ZeroAmount` | `throw Error("... amount must be greater than zero")` | ✅ Matched |
+| `revert InsufficientBalance` | `throw Error("Insufficient balance ...")` | ✅ Matched |
+
+### Why This Matters
+
+- **Domain Validation**: Off-chain validation must catch the same errors as on-chain, preventing wasted gas
+- **State Reconstruction**: Event-based reconstruction must apply the same rules to maintain consistency
+- **Testing**: Off-chain models can be tested independently while guaranteeing on-chain compatibility
+- **Reasoning**: Off-chain reasoning about state transitions must match on-chain behavior
+
+### Implementation
+
+The `Token` entity enforces these rules in `mint()`, `transfer()`, and `burn()` methods, ensuring that any direct call to these methods (bypassing `StateTransition` validation) still maintains consistency with on-chain behavior.
+
 ## Design Principles
 
 1. **Deterministic**: Same inputs always produce same outputs
-2. **Fail-Fast**: Illegal transitions revert immediately
+2. **Fail-Fast**: Illegal transitions revert immediately (on-chain) or throw errors (off-chain)
 3. **Inspectable**: All state changes emit events
 4. **Minimal**: No unnecessary complexity
 5. **Correct**: Invariants preserved by construction
+6. **Consistent**: Off-chain models mirror on-chain rules exactly

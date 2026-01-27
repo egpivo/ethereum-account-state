@@ -182,6 +182,13 @@ The token contract is designed as a deterministic state machine:
   - `Burn`: `totalSupply -= amount`, `balances[from] -= amount`
 - **Illegal Transitions**: Revert with custom errors
 
+**Critical Consistency Requirement**: Off-chain domain models (TypeScript `Token` entity) **must mirror** on-chain contract rules exactly:
+- Zero address operations → Revert (on-chain) / Throw error (off-chain)
+- Zero amount operations → Revert `ZeroAmount` (on-chain) / Throw error (off-chain)
+- Insufficient balance → Revert `InsufficientBalance` (on-chain) / Throw error (off-chain)
+
+This ensures that off-chain reasoning (domain validation, state reconstruction) matches on-chain behavior, preventing model inconsistencies.
+
 ### Separation of Concerns
 
 - **Wallet**: Owns private key, signs transactions, submits to network

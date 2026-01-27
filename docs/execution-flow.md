@@ -31,9 +31,14 @@ WalletService.transfer()
 ```
 
 **Error Handling**:
-- Domain validation fails → Return error before transaction
-- Transaction reverts → Receipt contains revert reason
+- Domain validation fails → Return error before transaction (no gas spent)
+- Transaction reverts → Receipt contains revert reason (gas spent)
 - Network failure → Exception thrown
+
+**Critical**: Domain validation rules (`StateTransition.validate*()`) and entity rules (`Token.mint/transfer/burn()`) **must mirror** on-chain contract rules exactly. This ensures:
+- Off-chain validation catches the same errors as on-chain (preventing wasted gas)
+- State reconstruction applies the same rules (maintaining consistency)
+- Off-chain reasoning matches on-chain behavior (preventing model inconsistencies)
 
 ### State Query (Storage Read)
 
