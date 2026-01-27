@@ -13,3 +13,25 @@ states/
 # Optional
 .env
 .env.local
+
+# Node.js
+node_modules/
+dist/
+*.log
+npm-debug.log*
+
+# Foundry
+cache/
+out/
+broadcast/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

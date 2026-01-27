@@ -1,0 +1,14 @@
+[profile.default]
+src = "contracts/src"
+out = "contracts/out"
+libs = ["contracts/lib"]
+solc_version = "0.8.28"
+optimizer = true
+optimizer_runs = 200
+via_ir = false
+evm_version = "cancun"  # Required for EIP-1153 (Transient Storage)
+remappings = []
+
+[profile.ci]
+fuzz_runs = 256
+invariant_runs = 256

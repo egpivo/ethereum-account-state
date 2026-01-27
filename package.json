@@ -1,0 +1,35 @@
+{
+  "name": "ethereum-account-state",
+  "version": "0.1.0",
+  "description": "DDD-based Ethereum token and wallet implementation with state machine core",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run test:foundry && npm run test:unit",
+    "test:foundry": "forge test",
+    "test:unit": "vitest run",
+    "compile": "forge build",
+    "deploy:local": "forge script script/Deploy.s.sol:DeployScript --rpc-url http://localhost:8545 --broadcast",
+    "lint": "prettier --check . && solhint 'contracts/**/*.sol'"
+  },
+  "keywords": [
+    "ethereum",
+    "token",
+    "wallet",
+    "ddd",
+    "state-machine",
+    "solidity"
+  ],
+  "author": "Joseph (Wen-Ting) Wang",
+  "license": "MIT",
+  "dependencies": {
+    "ethers": "^6.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  }
+}
