@@ -62,8 +62,10 @@ function App() {
         contract.totalSupply(),
       ])
       
-      setBalance(ethers.formatEther(balance))
-      setTotalSupply(ethers.formatEther(supply))
+      // Contract stores amounts as raw uint256 (no decimal scaling)
+      // Display as-is without formatEther conversion
+      setBalance(balance.toString())
+      setTotalSupply(supply.toString())
       setError('')
     } catch (err: any) {
       setError(err.message || 'Failed to load balance')
@@ -82,7 +84,10 @@ function App() {
 
     try {
       const contract = new ethers.Contract(tokenAddress, TOKEN_ABI, signer)
-      const tx = await contract.transfer(transferTo, ethers.parseEther(transferAmount))
+      // Contract expects raw uint256 (no decimal scaling)
+      // Convert string to BigInt directly, not parseEther (which multiplies by 10^18)
+      const amount = BigInt(transferAmount)
+      const tx = await contract.transfer(transferTo, amount)
       await tx.wait()
       
       setTransferTo('')
@@ -109,7 +114,9 @@ function App() {
 
     try {
       const contract = new ethers.Contract(tokenAddress, TOKEN_ABI, signer)
-      const tx = await contract.mint(mintTo, ethers.parseEther(mintAmount))
+      // Contract expects raw uint256 (no decimal scaling)
+      const amount = BigInt(mintAmount)
+      const tx = await contract.mint(mintTo, amount)
       await tx.wait()
       
       setMintTo('')
@@ -136,7 +143,9 @@ function App() {
 
     try {
       const contract = new ethers.Contract(tokenAddress, TOKEN_ABI, signer)
-      const tx = await contract.burn(ethers.parseEther(burnAmount))
+      // Contract expects raw uint256 (no decimal scaling)
+      const amount = BigInt(burnAmount)
+      const tx = await contract.burn(amount)
       await tx.wait()
       
       setBurnAmount('')
@@ -165,26 +174,28 @@ function App() {
         contract.queryFilter(contract.filters.Burn(), fromBlock),
       ])
 
+      // Contract stores amounts as raw uint256 (no decimal scaling)
+      // Display as-is without formatEther conversion
       const allEvents = [
         ...mintEvents.map((e: any) => ({
           type: 'Mint',
           from: 'N/A',
           to: e.args.to,
-          amount: ethers.formatEther(e.args.amount),
+          amount: e.args.amount.toString(),
           txHash: e.transactionHash,
         })),
         ...transferEvents.map((e: any) => ({
           type: 'Transfer',
           from: e.args.from,
           to: e.args.to,
-          amount: ethers.formatEther(e.args.amount),
+          amount: e.args.amount.toString(),
           txHash: e.transactionHash,
         })),
         ...burnEvents.map((e: any) => ({
           type: 'Burn',
           from: e.args.from,
           to: '0x0000...0000',
-          amount: ethers.formatEther(e.args.amount),
+          amount: e.args.amount.toString(),
           txHash: e.transactionHash,
         })),
       ].sort((a, b) => b.txHash.localeCompare(a.txHash))
