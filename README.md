@@ -134,6 +134,7 @@ npm run deploy:local
 ## Documentation
 
 - **[State Machine Specification](./docs/state-machine.md)**: Detailed specification of token state machine, transitions, and invariants
+- **[Authorization Model](./docs/authorization-model.md)**: Complete authorization model - who can perform which operations
 - **[Execution Flow](./docs/execution-flow.md)**: Documentation of execution flows, architecture layers, and transaction lifecycle
 - **[Invariant Verification](./docs/invariant-verification.md)**: Critical discussion of on-chain verification limitations and off-chain verification methods
 - **[Advanced Features](./docs/advanced-features.md)**: Solidity 0.8.28 advanced features (User-defined Value Types, Transient Storage, Using Directives)

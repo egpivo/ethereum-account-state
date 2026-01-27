@@ -202,6 +202,11 @@ contract Token {
      * @notice Mint tokens to an account
      * @dev State transition: totalSupply += amount, balances[to] += amount
      *      Uses transient storage reentrancy guard (gas-efficient)
+     *      
+     *      Authorization: Public (anyone can call)
+     *      This is a minimal implementation suitable for educational/testing purposes.
+     *      For production use, add authorization controls (e.g., onlyOwner, onlyMinter).
+     *      See docs/authorization-model.md for details.
      * @param to Address to mint tokens to
      * @param amount Amount to mint
      */
@@ -230,6 +235,10 @@ contract Token {
      * @notice Transfer tokens from caller to recipient
      * @dev State transition: balances[from] -= amount, balances[to] += amount
      *      Uses transient storage reentrancy guard (gas-efficient)
+     *      
+     *      Authorization: Self-only (only msg.sender can transfer their own tokens)
+     *      No approval mechanism - simpler than ERC20's approve/transferFrom pattern.
+     *      See docs/authorization-model.md for details.
      * @param to Address to transfer tokens to
      * @param amount Amount to transfer
      */
@@ -270,6 +279,9 @@ contract Token {
      * @notice Burn tokens from caller
      * @dev State transition: totalSupply -= amount, balances[from] -= amount
      *      Uses transient storage reentrancy guard (gas-efficient)
+     *      
+     *      Authorization: Self-only (only msg.sender can burn their own tokens)
+     *      See docs/authorization-model.md for details.
      *      
      *      Emits two events for canonical semantics:
      *      - Burn(from, amount): Explicit burn event

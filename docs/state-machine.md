@@ -81,11 +81,25 @@ This invariant ensures:
 - The ledger remains consistent
 - State can be verified and audited (off-chain)
 
+## Authorization Model
+
+**Important**: See [Authorization Model Documentation](./authorization-model.md) for complete details.
+
+**Summary**:
+- **Mint**: Public (anyone can call) - suitable for educational/testing, add restrictions for production
+- **Transfer**: Self-only (only token owner can transfer their own tokens)
+- **Burn**: Self-only (only token owner can burn their own tokens)
+
 ## State Transitions
 
 ### 1. Mint (Creation)
 
 **Function**: `mint(address to, uint256 amount)`
+
+**Authorization**: Public (anyone can call)
+- ⚠️ **No access control** - suitable for educational/testing
+- For production, add authorization (e.g., `onlyOwner`, `onlyMinter`)
+- See [Authorization Model](./authorization-model.md) for extension patterns
 
 **Preconditions**:
 - `to != address(0)` (zero address check)
@@ -111,6 +125,10 @@ balances[to]: B → B + amount
 ### 2. Transfer (Movement)
 
 **Function**: `transfer(address to, uint256 amount)`
+
+**Authorization**: Self-only (only `msg.sender` can transfer their own tokens)
+- Uses `msg.sender` to identify token owner
+- No approval mechanism (simpler than ERC20's `approve`/`transferFrom`)
 
 **Preconditions**:
 - `to != address(0)` (zero address check)
@@ -140,6 +158,10 @@ totalSupply: S → S (unchanged)
 ### 3. Burn (Destruction)
 
 **Function**: `burn(uint256 amount)`
+
+**Authorization**: Self-only (only `msg.sender` can burn their own tokens)
+- Uses `msg.sender` to identify token owner
+- Prevents unauthorized supply reduction
 
 **Preconditions**:
 - `amount > 0` (non-zero amount)
