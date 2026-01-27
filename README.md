@@ -131,6 +131,17 @@ anvil
 npm run deploy:local
 ```
 
+### Deploy to Sepolia Testnet
+
+```bash
+# 1. Get test ETH from RubyScore Faucet: https://docs.rubyscore.io/
+# 2. Set PRIVATE_KEY in .env file
+# 3. Deploy to Sepolia
+npm run deploy:sepolia
+```
+
+See [Deployment Guide](./docs/deployment.md) for detailed instructions.
+
 ## Documentation
 
 - **[State Machine Specification](./docs/state-machine.md)**: Token state machine, transitions, invariants, and verification methods
