@@ -276,8 +276,8 @@ contract TokenTest is Test {
 
         assertEq(
             token.balanceOf(alice) + token.balanceOf(bob),
-            token.totalSupply()
+            uint256(token.totalSupply())
         );
-        assertEq(token.totalSupply(), mintAmount);
+        assertEq(uint256(token.totalSupply()), mintAmount);
     }
 }
