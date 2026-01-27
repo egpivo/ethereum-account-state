@@ -115,11 +115,17 @@ export class StateQueryService {
             logsByTx.set(txHash, []);
           }
           // Preserve logIndex for chronological ordering within transaction
-          // logIndex is the index of the log in the transaction's logs array
+          // Use blockNumber, transactionIndex, and log.index to determine order
+          // For logs within the same transaction, log.index (block-level log index) provides chronological order
+          const logIndex = log.index !== null && log.index !== undefined 
+            ? Number(log.index) 
+            : (log.blockNumber !== null && log.transactionIndex !== null
+                ? Number(log.blockNumber) * 1000000 + Number(log.transactionIndex) * 1000
+                : 0);
           logsByTx.get(txHash)!.push({ 
             log, 
             parsed, 
-            logIndex: log.index !== null ? log.index : 0 
+            logIndex
           });
         }
       } catch (error) {
