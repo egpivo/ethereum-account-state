@@ -43,7 +43,7 @@ ethereum-account-state/
 
 **Purpose**: Define account state, legal state transitions, and failure boundaries.
 
-- **Language**: Solidity ^0.8.24
+- **Language**: Solidity ^0.8.28
 - **Tooling**: Foundry (forge / anvil)
 - **Key Features**:
   - Custom ledger-style token (minimal, inspectable)
@@ -133,11 +133,10 @@ npm run deploy:local
 
 ## Documentation
 
-- **[State Machine Specification](./docs/state-machine.md)**: Detailed specification of token state machine, transitions, and invariants
-- **[Authorization Model](./docs/authorization-model.md)**: Complete authorization model - who can perform which operations
-- **[Execution Flow](./docs/execution-flow.md)**: Documentation of execution flows, architecture layers, and transaction lifecycle
-- **[Invariant Verification](./docs/invariant-verification.md)**: Critical discussion of on-chain verification limitations and off-chain verification methods
-- **[Advanced Features](./docs/advanced-features.md)**: Solidity 0.8.28 advanced features (User-defined Value Types, Transient Storage, Using Directives)
+- **[State Machine Specification](./docs/state-machine.md)**: Token state machine, transitions, invariants, and verification methods
+- **[Authorization Model](./docs/authorization-model.md)**: Who can perform which operations and extension patterns
+- **[Execution Flow](./docs/execution-flow.md)**: Transaction lifecycle and state query flows
+- **[Advanced Features](./docs/advanced-features.md)**: Solidity 0.8.28 features (User-defined Value Types, Transient Storage, Using Directives)
 
 ## Testing Strategy
 
