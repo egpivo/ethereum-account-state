@@ -35,10 +35,19 @@ RPC_URL="${SEPOLIA_RPC_URL:-https://rpc.sepolia.dev}"
 
 echo "📡 Using RPC: $RPC_URL"
 echo "🔑 Private key loaded (last 4 chars: ${PRIVATE_KEY: -4})"
+
+# Check if verification is enabled
+if [ -n "$ETHERSCAN_API_KEY" ]; then
+    echo "✅ Contract verification enabled (Etherscan API key found)"
+else
+    echo "ℹ️  Contract verification disabled (ETHERSCAN_API_KEY not set)"
+    echo "   Deployment will proceed without verification"
+fi
 echo ""
 
 # Deploy contract
 # PRIVATE_KEY is now exported and available to forge via vm.envUint()
+# --verify flag is only added if ETHERSCAN_API_KEY is set
 forge script contracts/script/DeploySepolia.s.sol:DeploySepolia \
     --rpc-url "$RPC_URL" \
     --broadcast \

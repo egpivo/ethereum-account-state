@@ -13,6 +13,7 @@
    ```bash
    cp .env.example .env
    # Edit .env and add your PRIVATE_KEY
+   # Optional: Add ETHERSCAN_API_KEY if you want contract verification
    ```
 
 3. **Verify Balance**:
@@ -36,7 +37,11 @@ export PRIVATE_KEY=your_private_key_here
 # Optional: Set RPC URL
 export SEPOLIA_RPC_URL=https://rpc.sepolia.dev
 
+# Optional: Set Etherscan API key for contract verification
+export ETHERSCAN_API_KEY=your_api_key_here
+
 # Deploy to Sepolia
+# Note: --verify flag is only added if ETHERSCAN_API_KEY is set
 forge script contracts/script/DeploySepolia.s.sol:DeploySepolia \
     --rpc-url https://rpc.sepolia.dev \
     --broadcast \
@@ -44,7 +49,9 @@ forge script contracts/script/DeploySepolia.s.sol:DeploySepolia \
     -vvv
 ```
 
-**Important**: The `export` command is required because `vm.envUint("PRIVATE_KEY")` reads from environment variables, not from `.env` file directly.
+**Important Notes**:
+- The `export` command is required because `vm.envUint("PRIVATE_KEY")` reads from environment variables, not from `.env` file directly.
+- `--verify` is **optional** and only added if `ETHERSCAN_API_KEY` is set. Deployment works fine without verification.
 
 ### Configuration
 
@@ -85,8 +92,10 @@ forge script contracts/script/DeploySepolia.s.sol:DeploySepolia \
 - Ensure contract compiles: `forge build`
 
 **Verification Fails**:
-- Optional: Contract works without verification
-- For verification, set ETHERSCAN_API_KEY in .env
+- Contract works perfectly without verification
+- Verification is optional and only runs if `ETHERSCAN_API_KEY` is set
+- To enable verification: add `ETHERSCAN_API_KEY=your_key` to `.env` file
+- Get API key from: https://etherscan.io/apis
 
 ### Local Development
 
