@@ -13,8 +13,11 @@
    ```bash
    cp .env.example .env
    # Edit .env and add your PRIVATE_KEY
+   # Format: PRIVATE_KEY=0x... (do NOT use 'export' in .env file)
    # Optional: Add ETHERSCAN_API_KEY if you want contract verification
    ```
+   
+   **Important**: The `.env` file should use format `PRIVATE_KEY=0x...` (without `export`). The deployment script automatically exports variables using `set -a`.
 
 3. **Verify Balance**:
    - Check your wallet has Sepolia ETH for gas fees
@@ -50,8 +53,9 @@ forge script contracts/script/DeploySepolia.s.sol:DeploySepolia \
 ```
 
 **Important Notes**:
-- The `export` command is required because `vm.envUint("PRIVATE_KEY")` reads from environment variables, not from `.env` file directly.
-- `--verify` is **optional** and only added if `ETHERSCAN_API_KEY` is set. Deployment works fine without verification.
+- **Environment Variables**: When using the script (`deploy-sepolia.sh`), variables in `.env` are automatically exported. For manual deployment, you must use `export` commands.
+- **Contract Verification**: `--verify` is **optional** and **disabled by default**. It only runs if `ETHERSCAN_API_KEY` is set. Deployment works perfectly without verification.
+- **`.env` File Format**: Use `PRIVATE_KEY=0x...` (without `export`) in `.env` file. The script handles exporting automatically.
 
 ### Configuration
 

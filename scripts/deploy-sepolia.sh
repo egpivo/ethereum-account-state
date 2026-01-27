@@ -15,11 +15,14 @@ echo "🚀 Deploying Token contract to Sepolia testnet..."
 if [ ! -f .env ]; then
     echo "❌ Error: .env file not found"
     echo "📝 Please create .env file with PRIVATE_KEY"
-    echo "   Example: PRIVATE_KEY=0x..."
+    echo "   Format: PRIVATE_KEY=0x... (do NOT use 'export' in .env file)"
+    echo "   Example: PRIVATE_KEY=0x1234567890abcdef..."
     exit 1
 fi
 
 # Load environment variables and export them to child processes
+# Note: .env file should use format PRIVATE_KEY=0x... (without 'export')
+# This script uses 'set -a' to automatically export all variables to child processes
 set -a  # Automatically export all variables
 source .env
 set +a  # Stop automatically exporting
