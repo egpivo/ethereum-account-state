@@ -158,6 +158,20 @@ contract TokenTest is Test {
         token.burn(300);
     }
 
+    function test_Burn_EmitsBothEvents() public {
+        token.mint(alice, 1000);
+        
+        // Burn emits both Burn and Transfer(..., address(0), ...) events
+        vm.expectEmit(true, false, false, true);
+        emit Burn(alice, 300);
+        
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(alice, address(0), 300);
+        
+        vm.prank(alice);
+        token.burn(300);
+    }
+
     // ============ Invariant Tests ============
 
     function test_Invariant_SumBalancesEqualsTotalSupply() public {

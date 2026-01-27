@@ -179,6 +179,7 @@ contract Token {
     /// @notice Emitted when tokens are burned
     /// @param from Address burning tokens
     /// @param amount Amount burned
+    /// @dev Also emits Transfer(from, address(0), amount) for ERC20 canonical semantics
     event Burn(address indexed from, uint256 amount);
     
     // ============ Errors ============
@@ -269,6 +270,14 @@ contract Token {
      * @notice Burn tokens from caller
      * @dev State transition: totalSupply -= amount, balances[from] -= amount
      *      Uses transient storage reentrancy guard (gas-efficient)
+     *      
+     *      Emits two events for canonical semantics:
+     *      - Burn(from, amount): Explicit burn event
+     *      - Transfer(from, address(0), amount): ERC20 canonical supply reduction signal
+     *      
+     *      The Transfer event is critical for event-based reconstruction,
+     *      as it follows ERC20 standard semantics where Transfer to address(0)
+     *      represents token destruction.
      * @param amount Amount to burn
      */
     function burn(uint256 amount) external {
@@ -296,7 +305,10 @@ contract Token {
         balances[from] = fromBalance.sub(amountBalance);
         
         ReentrancyGuard.exit();
+        
+        // Emit both events for canonical semantics
         emit Burn(from, amount);
+        emit Transfer(from, address(0), amount); // ERC20 canonical supply reduction
     }
     
     // ============ View Functions ============

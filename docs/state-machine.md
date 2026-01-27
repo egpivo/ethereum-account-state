@@ -156,7 +156,17 @@ balances[from]: B → B - amount
 - `balances[from]` decreased by `amount`
 - Invariant preserved: `sum(balances) == totalSupply`
 
-**Events**: `Burn(from, amount)`
+**Events**:
+- `Burn(from, amount)` - Explicit burn event
+- `Transfer(from, address(0), amount)` - ERC20 canonical supply reduction signal
+
+**Event Semantics**:
+The `Transfer` event to `address(0)` is the ERC20 standard way to signal token destruction.
+This dual-event emission ensures:
+1. **Explicit semantics**: `Burn` event clearly indicates intentional destruction
+2. **ERC20 compatibility**: `Transfer(..., address(0), ...)` follows standard semantics
+3. **Event-based reconstruction**: Reconstruction logic can rely on `Transfer` events alone,
+   as `Transfer(..., address(0), ...)` unambiguously signals supply reduction
 
 **Illegal Transitions**:
 - Burning zero amount → `ZeroAmount` error
@@ -226,10 +236,16 @@ Illegal Transitions (Revert):
 The state can be reconstructed from events (off-chain):
 1. Start with `totalSupply = 0`, `balances = {}`
 2. Replay all `Mint` events: `balances[to] += amount`, `totalSupply += amount`
-3. Replay all `Transfer` events: `balances[from] -= amount`, `balances[to] += amount`
-4. Replay all `Burn` events: `balances[from] -= amount`, `totalSupply -= amount`
+3. Replay all `Transfer` events:
+   - If `to != address(0)`: `balances[from] -= amount`, `balances[to] += amount` (normal transfer)
+   - If `to == address(0)`: `balances[from] -= amount`, `totalSupply -= amount` (burn via Transfer)
+4. (Optional) Replay all `Burn` events: `balances[from] -= amount`, `totalSupply -= amount`
+   - Note: `Burn` events are redundant if `Transfer(..., address(0), ...)` is already processed
 5. Verify: `sum(balances) == totalSupply` (now possible because we have all balances)
 6. Compare reconstructed `totalSupply` with on-chain `totalSupply()` to verify consistency
+
+**Important**: The `Transfer(from, address(0), amount)` event is the canonical signal for supply reduction.
+Reconstruction logic can rely solely on `Transfer` events, treating `Transfer(..., address(0), ...)` as burns.
 
 **Limitation**: This requires knowing all addresses that have interacted with the contract.
 

@@ -53,11 +53,19 @@ balances[from] -= amount;   // Decrease balance by same amount
 2. Replay events to reconstruct the state:
    - Start with `totalSupply = 0`, `balances = {}`
    - For each `Mint(to, amount)`: `balances[to] += amount`, `totalSupply += amount`
-   - For each `Transfer(from, to, amount)`: `balances[from] -= amount`, `balances[to] += amount`
+   - For each `Transfer(from, to, amount)`:
+     - If `to != address(0)`: `balances[from] -= amount`, `balances[to] += amount` (normal transfer)
+     - If `to == address(0)`: `balances[from] -= amount`, `totalSupply -= amount` (burn via Transfer)
    - For each `Burn(from, amount)`: `balances[from] -= amount`, `totalSupply -= amount`
+     - Note: `Burn` events are redundant if `Transfer(..., address(0), ...)` is already processed
 3. Calculate `sum(balances)` from the reconstructed state
 4. Compare with `totalSupply` from events
 5. Verify: `sum(balances) == totalSupply`
+
+**Critical Design Decision**: The contract emits both `Burn` and `Transfer(..., address(0), ...)` events for burns.
+The `Transfer(..., address(0), ...)` event is the **ERC20 canonical signal** for supply reduction.
+Reconstruction logic can rely solely on `Transfer` events, treating `Transfer(..., address(0), ...)` as burns.
+This ensures compatibility with standard ERC20 event parsers and reconstruction tools.
 
 **Limitations**:
 - Requires knowing all addresses that have interacted with the contract

@@ -67,6 +67,15 @@ export class StateQueryService {
 
   /**
    * Reconstruct token state from events (historical state)
+   * 
+   * Event Semantics:
+   * - Mint: Creates new tokens, increases totalSupply
+   * - Transfer(to != address(0)): Moves tokens between accounts, totalSupply unchanged
+   * - Transfer(to == address(0)): ERC20 canonical burn signal, decreases totalSupply
+   * - Burn: Explicit burn event (redundant if Transfer(..., address(0), ...) is present)
+   * 
+   * Note: The contract emits both Burn and Transfer(..., address(0), ...) for burns.
+   * This method processes both, but Transfer(..., address(0), ...) is the canonical signal.
    */
   async reconstructStateFromEvents(
     tokenAddress: Address,
@@ -100,8 +109,18 @@ export class StateQueryService {
           const from = Address.from(parsed.args.from);
           const to = Address.from(parsed.args.to);
           const amount = Balance.from(parsed.args.amount);
-          token.transfer(from, to, amount);
+          
+          // Transfer to address(0) is the ERC20 canonical burn signal
+          if (to.isZero()) {
+            // This is a burn via Transfer event
+            token.burn(from, amount);
+          } else {
+            // Normal transfer
+            token.transfer(from, to, amount);
+          }
         } else if (parsed?.name === "Burn") {
+          // Explicit Burn event (redundant if Transfer(..., address(0), ...) was already processed)
+          // Process it anyway to ensure correctness even if Transfer event is missing
           const from = Address.from(parsed.args.from);
           const amount = Balance.from(parsed.args.amount);
           token.burn(from, amount);
