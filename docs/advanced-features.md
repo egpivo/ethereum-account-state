@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document explains the advanced Solidity features used in the Token contract, demonstrating PhD-level engineering practices for ledger development.
+This document explains the advanced Solidity features used in the Token contract, demonstrating protocol-grade engineering practices for ledger development.
 
 ## 1. User-defined Value Types (Balance)
 
@@ -63,7 +63,7 @@ Balance total = amount1.add(amount2); // Type-safe!
 
 This is the difference between:
 - **Entry-level code**: `uint256 amount`
-- **Financial protocol code**: `Balance amount`
+- **Protocol-grade code**: `Balance amount`
 
 ## 2. Transient Storage (EIP-1153)
 
@@ -71,12 +71,16 @@ This is the difference between:
 
 EIP-1153 introduced transient storage (`tstore`/`tload`) - storage that persists only during a single transaction and is automatically cleared at the end.
 
-### Gas Comparison
+### Gas Cost Analysis
 
-| Operation | Regular Storage | Transient Storage | Savings |
-|-----------|----------------|-------------------|---------|
-| First write | 20,000 gas | 100 gas | **200x** |
-| Read | 2,100 gas | 100 gas | **21x** |
+Transient storage operations have significantly lower gas costs compared to regular storage:
+
+- `tstore`: 100 gas (first write to a slot)
+- `tload`: 100 gas (read from a slot)
+- `sstore`: 20,000 gas (first write to a slot) or 5,000 gas (subsequent writes)
+- `sload`: 2,100 gas (cold read) or 100 gas (warm read)
+
+**Note**: The actual savings depend on storage access patterns. For single-transaction state that doesn't need to persist, transient storage is more efficient.
 
 ### Implementation
 
@@ -86,36 +90,59 @@ library ReentrancyGuard {
         uint256(keccak256("ReentrancyGuard"));
 
     function isEntered() internal view returns (bool) {
-        // tload: 100 gas (vs sload: 2,100 gas)
-        return tload(REENTRANCY_GUARD_SLOT) != 0;
+        uint256 slot = REENTRANCY_GUARD_SLOT;
+        uint256 value;
+        assembly {
+            value := tload(slot)
+        }
+        return value != 0;
     }
 
     function enter() internal {
-        // tstore: 100 gas (vs sstore: 20,000 gas)
-        tstore(REENTRANCY_GUARD_SLOT, 1);
+        uint256 slot = REENTRANCY_GUARD_SLOT;
+        assembly {
+            tstore(slot, 1)
+        }
     }
 }
 ```
 
-### Why It's Perfect for Reentrancy Guards
+### Context: Why Reentrancy Guard in This Token?
 
-1. **Single Transaction Scope**: Reentrancy guards only need to persist during one transaction
-2. **Automatic Cleanup**: No need to manually clear (though we do it for clarity)
-3. **Massive Gas Savings**: 200x cheaper than regular storage
+**Important Note**: This token contract is a minimal ledger implementation with:
+- No external calls
+- No callbacks
+- No hooks
+- No ERC777/ERC1363-like behavior
 
-### When to Use
+**Theoretical Risk**: In its current form, this token does not have reentrancy attack vectors because it performs no external calls that could trigger reentrancy.
 
-- ✅ Reentrancy guards
+**Why We Still Include It**:
+
+1. **Defensive Programming**: Future extensions (e.g., hooks, callbacks, integration with other protocols) may introduce reentrancy risks. The guard provides protection without significant cost.
+
+2. **Educational Value**: Demonstrates proper use of transient storage for reentrancy protection, which is relevant for more complex token implementations.
+
+3. **Minimal Cost**: Using transient storage (`tstore`/`tload`) adds only ~200 gas per operation, which is negligible compared to the security benefit if the contract is extended.
+
+4. **Best Practice**: Even if not strictly necessary now, following security best practices from the start is sound engineering.
+
+**When Transient Storage Makes Sense**:
+
+- ✅ Reentrancy guards (as demonstrated here)
 - ✅ Temporary flags during transaction execution
 - ✅ Cross-function state within a transaction
+- ✅ Any state that only needs to persist during a single transaction
 - ❌ State that needs to persist across transactions
 
-### Real-World Impact
+### Real-World Application
 
-If you mention `tstore` and `tload` in a blog post or interview, it immediately shows you understand:
-- Latest EVM improvements (2024-2025)
-- Gas optimization techniques
-- When to use which storage type
+Transient storage is particularly valuable in contracts that:
+- Make external calls (DeFi protocols, token bridges)
+- Have callback mechanisms (ERC777, ERC1363)
+- Integrate with other protocols that may trigger reentrancy
+
+While this minimal token doesn't currently have these features, the pattern demonstrates understanding of modern EVM capabilities and defensive programming practices.
 
 ## 3. Using Directives
 
@@ -141,7 +168,7 @@ balances[to] = BalanceLib.add(balances[to], amountBalance);
 
 1. **Readability**: Code reads like natural language
 2. **Type Safety**: Operations are scoped to the correct type
-3. **Financial Protocol Aesthetic**: Makes code look professional
+3. **Protocol-Grade Aesthetic**: Makes code more maintainable and audit-friendly
 
 ### Example Comparison
 
@@ -179,10 +206,10 @@ function transfer(address to, uint256 amount) external {
 ```
 
 This demonstrates:
-- ✅ Understanding of latest Solidity features
-- ✅ Gas optimization awareness
+- ✅ Understanding of modern Solidity features
+- ✅ Appropriate use of gas-efficient patterns
 - ✅ Type safety practices
-- ✅ Professional code quality
+- ✅ Protocol-grade code quality
 
 ## 5. Why These Features Matter for "Ledger Development"
 
@@ -198,8 +225,8 @@ A ledger must be:
 | Feature | Addresses | Impact |
 |---------|-----------|--------|
 | User-defined Value Types | Correctness | Prevents mixing amounts/prices/timestamps |
-| Transient Storage | Efficiency | 200x gas savings for reentrancy guards |
-| Using Directives | Maintainability | Makes code readable and professional |
+| Transient Storage | Efficiency | Lower gas cost for single-transaction state |
+| Using Directives | Maintainability | Improves readability and auditability |
 
 ## 6. Version Requirements
 
@@ -216,20 +243,21 @@ When discussing these features:
    - Demonstrates attention to correctness
 
 2. **"We use Transient Storage for reentrancy protection"**
-   - Shows knowledge of latest EVM improvements
-   - Demonstrates gas optimization awareness
+   - Shows knowledge of latest EVM improvements (EIP-1153)
+   - Demonstrates understanding of when to use transient vs regular storage
    - Mention `tstore`/`tload` specifically
+   - Note: In this minimal token, it's defensive programming rather than strictly necessary
 
-3. **"We use `using` directives for financial-grade operations"**
+3. **"We use `using` directives for protocol-grade operations"**
    - Shows code quality focus
-   - Demonstrates professional practices
+   - Demonstrates mature engineering practices
+   - Improves readability and auditability
 
 ## Conclusion
 
-These features transform the contract from "entry-level" to "PhD-level" by demonstrating:
-- Deep understanding of Solidity features
-- Gas optimization expertise
-- Type safety practices
-- Professional code quality
+These features demonstrate protocol-grade engineering practices:
+- **Type Safety**: User-defined Value Types prevent logic errors at compile time
+- **Gas Efficiency**: Transient Storage provides efficient single-transaction state management
+- **Code Quality**: Using directives improve readability and maintainability
 
-This is what separates a "token contract" from a "financial protocol."
+This approach separates basic token implementations from protocol-grade ledger systems. Each feature serves a specific purpose: correctness, efficiency, and maintainability. The combination reflects mature engineering judgment rather than unnecessary complexity.
