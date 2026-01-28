@@ -539,7 +539,7 @@ function App() {
                     >
                       <strong>Note:</strong> Showing events from blocks{" "}
                       {eventBlockRange.fromBlock.toLocaleString()} to{" "}
-                      {eventBlockRange.toBlock.toLocaleString()}(
+                      {eventBlockRange.toBlock.toLocaleString()} (
                       {eventBlockRange.toBlock - eventBlockRange.fromBlock + 1}{" "}
                       blocks, ~
                       {Math.round(
