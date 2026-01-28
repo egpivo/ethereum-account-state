@@ -2,16 +2,14 @@
 
 [![CI](https://github.com/joseph/ethereum-account-state/actions/workflows/ci.yml/badge.svg)](https://github.com/joseph/ethereum-account-state/actions/workflows/ci.yml)
 
-A Domain-Driven Design (DDD) implementation of an Ethereum token and wallet system, focusing on state machine correctness, clear separation of concerns, and comprehensive testing.
+Minimal Ethereum token system designed as a deterministic state machine, with explicit transitions, off-chain reasoning, and comprehensive tests.
 
 ## Project Philosophy
 
-This project demonstrates:
-
-- **State Machine Design**: Token contract as a deterministic state machine with explicit invariants
-- **DDD Architecture**: Clear separation between Domain, Application, and Infrastructure layers
-- **Correctness First**: Comprehensive testing including invariant tests and fuzz testing
-- **Explainability**: Detailed documentation of state transitions and execution flows
+- **State Machine First**: Explicit transitions and illegal operations
+- **Execution Boundaries**: Wallet vs state vs authority (authority is conceptual)
+- **Correctness-Oriented**: Invariants, unit tests, fuzzing
+- **Explainable**: Clear state transition and execution flow docs
 
 ## Project Structure
 
@@ -39,58 +37,57 @@ ethereum-account-state/
 
 ### 1. Smart Contract Layer (State Machine Core)
 
-**Purpose**: Define account state, legal state transitions, and failure boundaries.
+**Purpose**: Define account state, legal transitions, and failure boundaries.
 
 - **Language**: Solidity ^0.8.28
 - **Tooling**: Foundry (forge / anvil)
 - **Key Features**:
-  - Custom ledger-style token (minimal, inspectable)
+  - Minimal ledger-style token
   - Explicit invariants (e.g., `sum(balances) == totalSupply`)
-  - Custom errors for debuggability
+  - Custom errors
   - Events as canonical history
 
 **Core Invariant (Theoretical)**: `sum(balances) == totalSupply` must hold at all times.
 
-**Important**: This invariant cannot be directly verified on-chain because mappings are not enumerable. However, it is guaranteed by construction through state transitions. See [State Machine Specification](./docs/state-machine.md) for verification methods.
+**Important**: This invariant cannot be directly verified on-chain because mappings are not enumerable. It is guaranteed by construction through state transitions. See [State Machine Specification](./docs/state-machine.md) for verification methods.
 
 ### 2. Domain Layer (Business Logic)
 
-**Purpose**: Encapsulate business rules and domain concepts.
+**Purpose**: Encapsulate business rules for off-chain reasoning.
 
 - **Entities**: `Token` (used in state reconstruction)
-- **Value Objects**: `Address`, `Balance` (used throughout)
+- **Value Objects**: `Address`, `Balance`
 - **Services**: `StateTransition` (validation, used by `WalletService`)
 
-**Note**: Some domain entities (e.g., `Account`) are defined but not actively used in current implementation. See [Future Work](./docs/future-work.md) for details.
+**Note**: Some domain entities (e.g., `Account`) are defined but not actively used. See [Future Work](./docs/future-work.md).
 
 ### 3. Application Layer (Use Cases)
 
-**Purpose**: Orchestrate domain objects to fulfill use cases.
+**Purpose**: Orchestrate use cases with domain validation.
 
-- **WalletService**: Wallet operations with domain validation (uses `StateTransition` for pre-transaction validation)
-- **StateQueryService**: State querying using domain entities (uses `Token` entity for event-based reconstruction)
+- **WalletService**: Wallet operations with domain validation
+- **StateQueryService**: Storage reads and event-based reconstruction
 
 **Key Separation**: Wallet ≠ State ≠ Authority
 
-**Important Design Note**: 
+**Important Design Note**:
 - **Minting is intentionally permissionless** in this minimal implementation
-- **Authority separation** (wallet ≠ state ≠ authority) is presented as a **conceptual model**, not an enforced on-chain property
-- This is a design choice for educational/testing purposes, not a missing feature
-- For production use, see [Authorization Model](./docs/authorization-model.md) for extension patterns
+- **Authority separation** is a conceptual model, not an enforced on-chain property
+- For production use, see [Authorization Model](./docs/authorization-model.md)
 
-**Domain Integration**: Application services actively use domain entities and services:
-- `WalletService` uses `StateTransition` validation to prevent invalid transactions
-- `StateQueryService` uses `Token` entity for state reconstruction and invariant verification
+**Domain Integration**:
+- `WalletService` uses `StateTransition` for pre-transaction validation
+- `StateQueryService` uses `Token` for reconstruction and invariant checks
 
 ### 4. Infrastructure Layer (External Dependencies)
 
-**Purpose**: Provide implementations for external systems.
+**Purpose**: Provide external integrations.
 
 - **EthereumProvider**: RPC provider factory
 - **ContractRepository**: On-chain state repository
   - **Design Choice**: Best-effort diagnostic mode (not fail-fast)
-  - State mismatches between storage and event reconstruction are logged but tolerated
-  - Suitable for educational/diagnostic purposes where event reconstruction may be incomplete
+  - Storage vs reconstruction mismatches are logged but tolerated
+  - Suitable for educational/diagnostic use where reconstruction may be incomplete
 
 ## Getting Started
 
@@ -136,22 +133,65 @@ npm test
 
 ### Local Development
 
-```bash
-# Start local Anvil node
-anvil
+**Important**: This project uses a **frontend-only architecture**. The frontend connects directly to the blockchain (via MetaMask or RPC provider). There is no separate backend server.
 
-# In another terminal, deploy to local node
-npm run deploy:local
-```
+**Development Flow**:
+
+1. **Start local blockchain** (Anvil):
+   ```bash
+   anvil
+   ```
+   This starts a local Ethereum node at `http://localhost:8545`
+
+2. **Deploy contract to local node** (in another terminal):
+   ```bash
+   npm run deploy:local
+   ```
+   Copy the deployed contract address from the output.
+
+3. **Start frontend** (in another terminal):
+   ```bash
+   cd frontend
+   npm install  # First time only
+   npm run dev
+   ```
+   The frontend will open at `http://localhost:3000`
+
+4. **Connect to local network**:
+   - Open MetaMask
+   - Add network: `http://localhost:8545` (Chain ID: 31337)
+   - Use the contract address from step 2
+   - Connect wallet in the frontend
+
+**Alternative: Use Testnet** (no local node needed):
+- Deploy to Sepolia testnet (see below)
+- Start frontend: `cd frontend && npm run dev`
+- Connect MetaMask to Sepolia network
 
 ### Deploy to Sepolia Testnet
 
-```bash
-# 1. Get test ETH from RubyScore Faucet: https://docs.rubyscore.io/
-# 2. Set PRIVATE_KEY in .env file
-# 3. Deploy to Sepolia
-npm run deploy:sepolia
-```
+**For testnet development** (no local node needed):
+
+1. **Get test ETH**: Visit [RubyScore Faucet](https://docs.rubyscore.io/) to get Sepolia test ETH
+
+2. **Deploy contract**:
+   ```bash
+   # Set PRIVATE_KEY in .env file
+   npm run deploy:sepolia
+   ```
+   Copy the deployed contract address from the output.
+
+3. **Start frontend**:
+   ```bash
+   cd frontend
+   npm install  # First time only
+   npm run dev
+   ```
+
+4. **Connect to Sepolia**:
+   - Connect MetaMask to Sepolia network
+   - Use the contract address from step 2
+   - Connect wallet in the frontend
 
 See [Deployment Guide](./docs/deployment.md) for detailed instructions.
 
@@ -201,7 +241,7 @@ The token contract is designed as a deterministic state machine:
 - Zero amount operations → Revert `ZeroAmount` (on-chain) / Throw error (off-chain)
 - Insufficient balance → Revert `InsufficientBalance` (on-chain) / Throw error (off-chain)
 
-This ensures that off-chain reasoning (domain validation, state reconstruction) matches on-chain behavior, preventing model inconsistencies.
+This keeps off-chain reasoning aligned with on-chain behavior.
 
 ### Separation of Concerns
 
@@ -213,9 +253,9 @@ This ensures that off-chain reasoning (domain validation, state reconstruction) 
 
 1. **Storage Reads**: Direct `eth_call` to contract functions (production-ready)
 2. **Event Reconstruction**: Replay events to rebuild state
-   - **Correctness**: Validated by tests - produces correct state when given complete event history
-   - **Boundary**: In production, may be incomplete (pagination, reorgs) - "best-effort diagnostic"
-3. **Comparison**: Compare storage state vs derived state (for diagnostic purposes)
+   - **Correctness**: Validated by tests in ideal conditions (complete history)
+   - **Boundary**: Best-effort diagnostic when history is incomplete (pagination, reorgs)
+3. **Comparison**: Compare storage state vs derived state (diagnostic)
 
 ## Tech Stack
 
