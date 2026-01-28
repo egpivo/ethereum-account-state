@@ -25,46 +25,18 @@ function getEtherscanUrl(chainId: bigint, txHash: string): string {
     return `https://etherscan.io/tx/${txHash}`
   }
   
-  // Testnets
+  // Sepolia testnet (primary deployment target)
   if (chainIdNum === 11155111) {
-    // Sepolia
     return `https://sepolia.etherscan.io/tx/${txHash}`
-  }
-  
-  // Layer 2 / Other networks
-  if (chainIdNum === 42161) {
-    // Arbitrum One
-    return `https://arbiscan.io/tx/${txHash}`
-  }
-  if (chainIdNum === 421614) {
-    // Arbitrum Sepolia
-    return `https://sepolia.arbiscan.io/tx/${txHash}`
-  }
-  if (chainIdNum === 8453) {
-    // Base Mainnet
-    return `https://basescan.org/tx/${txHash}`
-  }
-  if (chainIdNum === 84532) {
-    // Base Sepolia
-    return `https://sepolia.basescan.org/tx/${txHash}`
-  }
-  if (chainIdNum === 10) {
-    // Optimism Mainnet
-    return `https://optimistic.etherscan.io/tx/${txHash}`
-  }
-  if (chainIdNum === 11155420) {
-    // Optimism Sepolia
-    return `https://sepolia-optimism.etherscan.io/tx/${txHash}`
   }
   
   // Local development
   if (chainIdNum === 31337) {
-    // Local Anvil/Hardhat
     return `#`
   }
   
   // Unknown chain: return '#' to prevent incorrect mainnet links
-  // This prevents users on other testnets from seeing wrong links
+  // Even if only demoing on Sepolia, this prevents wrong links if chainId detection fails
   return `#`
 }
 
