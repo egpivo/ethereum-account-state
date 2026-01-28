@@ -67,3 +67,10 @@ npm run lint
 - `docs/deployment.md`
 - `docs/advanced-features.md`
 - `docs/future-work.md`
+
+## GitHub Pages
+
+The frontend can be deployed to GitHub Pages via Actions:
+
+- Workflow: `.github/workflows/pages-frontend.yml`
+- URL: `https://egpivo.github.io/ethereum-account-state/`
