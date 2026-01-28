@@ -82,13 +82,20 @@ export class StateQueryService {
    * 
    * Deduplication Strategy:
    * - Use Transfer(..., address(0), ...) as the canonical burn signal (always processed)
-   * - Use transaction-level flag (hasTransferBurn) to track if a transaction has Transfer(..., address(0), ...)
+   * - Use transaction-level flag (hasTransferBurn) to track if a transaction has ANY Transfer(..., address(0), ...)
    * - Skip ALL Burn events from transactions that have Transfer(..., address(0), ...)
    * - This ensures each burn operation is processed exactly once, maintaining sum(balances) == totalSupply
    * 
+   * Multiple Burns per Transaction:
+   * - The current Token contract does not support batch burns, but the implementation handles it correctly:
+   *   - If a transaction has multiple burn operations (e.g., via multicall), each emits Burn + Transfer(..., address(0), ...)
+   *   - We process ALL Transfer(..., address(0), ...) events (one per burn operation)
+   *   - We skip ALL Burn events if the transaction has any Transfer(..., address(0), ...)
+   *   - This works because we process events chronologically and use Transfer(..., address(0), ...) as canonical
+   * 
    * Implementation:
    * 1. First pass: Scan transaction for Transfer(..., address(0), ...) events, set hasTransferBurn flag
-   * 2. Second pass: Process Transfer(..., address(0), ...) as canonical burn, skip Burn if hasTransferBurn is true
+   * 2. Second pass: Process ALL Transfer(..., address(0), ...) as canonical burns, skip ALL Burn if hasTransferBurn is true
    */
   async reconstructStateFromEvents(
     tokenAddress: Address,
@@ -182,8 +189,11 @@ export class StateQueryService {
     // Implementation matches contract documentation: "Reconstruction must use Transfer(..., address(0), ...)
     // as canonical signal and skip Burn events from the same transaction"
     // 
-    // Deduplication uses transaction-level flag (hasTransferBurn), NOT logIndex-based keys,
-    // because Burn and Transfer(..., address(0), ...) have different logIndex values.
+    // Deduplication Strategy:
+    // - Uses transaction-level flag (hasTransferBurn), NOT logIndex-based keys
+    // - Reason: Burn and Transfer(..., address(0), ...) have different logIndex values, so logIndex cannot be used
+    // - Works for single burn per transaction (current Token contract) and multiple burns (future batch/multicall)
+    // - For multiple burns: Process ALL Transfer(..., address(0), ...) events, skip ALL Burn events
     
     for (const [txHash, txLogs] of sortedTxEntries) {
       // Sort logs within transaction by tuple: (blockNumber, transactionIndex, logIndex)
