@@ -78,8 +78,17 @@ export class StateQueryService {
    * - Burn: Explicit burn event (redundant with Transfer(..., address(0), ...))
    * 
    * CRITICAL: The contract emits both Burn and Transfer(..., address(0), ...) for burns.
-   * To avoid double-counting, we use Transfer(..., address(0), ...) as the canonical signal
-   * and skip Burn events from the same transaction.
+   * Both events represent the SAME burn operation but have different logIndex values.
+   * 
+   * Deduplication Strategy:
+   * - Use Transfer(..., address(0), ...) as the canonical burn signal (always processed)
+   * - Use transaction-level flag (hasTransferBurn) to track if a transaction has Transfer(..., address(0), ...)
+   * - Skip ALL Burn events from transactions that have Transfer(..., address(0), ...)
+   * - This ensures each burn operation is processed exactly once, maintaining sum(balances) == totalSupply
+   * 
+   * Implementation:
+   * 1. First pass: Scan transaction for Transfer(..., address(0), ...) events, set hasTransferBurn flag
+   * 2. Second pass: Process Transfer(..., address(0), ...) as canonical burn, skip Burn if hasTransferBurn is true
    */
   async reconstructStateFromEvents(
     tokenAddress: Address,
@@ -170,9 +179,11 @@ export class StateQueryService {
     });
     
     // Process events: Use Transfer(..., address(0), ...) as canonical burn signal
-    // Skip Burn events if the same transaction has any Transfer(..., address(0), ...)
-    // This prevents double-counting since Burn and Transfer(..., address(0), ...) represent the same operation
-    // but have different logIndex values (cannot use logIndex for deduplication)
+    // Implementation matches contract documentation: "Reconstruction must use Transfer(..., address(0), ...)
+    // as canonical signal and skip Burn events from the same transaction"
+    // 
+    // Deduplication uses transaction-level flag (hasTransferBurn), NOT logIndex-based keys,
+    // because Burn and Transfer(..., address(0), ...) have different logIndex values.
     
     for (const [txHash, txLogs] of sortedTxEntries) {
       // Sort logs within transaction by tuple: (blockNumber, transactionIndex, logIndex)
@@ -184,19 +195,21 @@ export class StateQueryService {
       });
       
       // First pass: Check if this transaction has any Transfer(..., address(0), ...) events
-      // Use a simple boolean flag at transaction level (not logIndex-based)
+      // This implements the contract's requirement: "skip Burn events from the same transaction"
+      // that has Transfer(..., address(0), ...)
       let hasTransferBurn = false;
       for (const { parsed } of sortedLogs) {
         if (parsed.name === "Transfer") {
           const to = Address.from(parsed.args.to);
           if (to.isZero()) {
             hasTransferBurn = true;
-            break; // Found Transfer burn, no need to check further
+            break; // Found Transfer burn, this transaction will skip Burn events
           }
         }
       }
       
       // Second pass: process events in chronological order
+      // This implements: "Reconstruction must use Transfer(..., address(0), ...) as canonical signal"
       for (const { parsed } of sortedLogs) {
         if (parsed.name === "Mint") {
           const to = Address.from(parsed.args.to);
@@ -208,17 +221,20 @@ export class StateQueryService {
           const amount = Balance.from(parsed.args.amount);
           
           // Transfer to address(0) is the ERC20 canonical burn signal
+          // This is the canonical signal as documented in Token.sol
           if (to.isZero()) {
             // Always process Transfer(..., address(0), ...) as the canonical burn
+            // This matches the contract documentation requirement
             token.burn(from, amount);
           } else {
             // Normal transfer
             token.transfer(from, to, amount);
           }
         } else if (parsed.name === "Burn") {
-          // CRITICAL: Skip Burn events if this transaction has any Transfer(..., address(0), ...)
+          // CRITICAL: Skip Burn events if this transaction has Transfer(..., address(0), ...)
+          // This matches the contract documentation: "Burn events from the same transaction must be skipped"
           // Both events represent the same burn operation but have different logIndex values
-          // Using tx-level flag (not logIndex) ensures we don't double-count
+          // Using tx-level flag (not logIndex-based) ensures correct deduplication
           if (!hasTransferBurn) {
             // Fallback: process Burn event only if there's no Transfer(..., address(0), ...) in this transaction
             // (This should not happen in our contract, but handles edge cases)
@@ -226,7 +242,7 @@ export class StateQueryService {
             const amount = Balance.from(parsed.args.amount);
             token.burn(from, amount);
           }
-          // If hasTransferBurn is true, skip this Burn event completely to avoid double-counting
+          // If hasTransferBurn is true, skip this Burn event completely (as documented in Token.sol)
         }
       }
     }
