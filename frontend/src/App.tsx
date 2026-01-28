@@ -126,6 +126,22 @@ function App() {
     }
   };
 
+  // MetaMask does not support programmatic disconnect.
+  // "Disconnect" here means: clear app state and stop using the connected signer/provider.
+  const disconnectWallet = () => {
+    setProvider(null);
+    setSigner(null);
+    setAccount("");
+    setChainId(null);
+
+    // Clear derived UI state (keep tokenAddress persisted for convenience)
+    setBalance("0");
+    setTotalSupply("0");
+    setEvents([]);
+    setEventBlockRange(null);
+    setError("");
+  };
+
   // Validate address
   const validateAddress = (address: string): boolean => {
     try {
@@ -447,6 +463,13 @@ function App() {
                 <strong>Connected:</strong> {account.slice(0, 6)}...
                 {account.slice(-4)}
               </p>
+              <button
+                onClick={disconnectWallet}
+                className="btn btn-secondary"
+                style={{ marginTop: "0.75rem" }}
+              >
+                Disconnect
+              </button>
             </div>
 
             <div className="section">
