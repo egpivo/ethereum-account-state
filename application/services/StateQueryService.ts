@@ -68,8 +68,15 @@ export class StateQueryService {
   /**
    * Reconstruct token state from events (historical state)
    * 
-   * **Important Boundary**: This is an educational and diagnostic technique, not a verifier.
-   * It can be incomplete without pagination, reorg handling, or storage-first reconciliation.
+   * **Correctness**: When given complete event history (all events, no reorgs),
+   * this method produces state that matches on-chain storage and maintains
+   * invariants (sum(balances) == totalSupply). This is validated by comprehensive tests.
+   * 
+   * **Boundary**: In production, reconstruction may be incomplete due to:
+   * - Pagination limits (not all events retrieved)
+   * - Chain reorganizations (events from orphaned blocks)
+   * - Missing historical data
+   * In such cases, this is "best-effort diagnostic" rather than a verifier.
    * 
    * Event Semantics:
    * - Mint: Creates new tokens, increases totalSupply

@@ -13,8 +13,16 @@ import { StateQueryService } from "../../application/services/StateQueryService.
  * 3. Batch burn handling (multiple burns per transaction)
  * 4. Cross-transaction ordering
  * 
- * These tests validate the "correctness-first" claim by ensuring
- * the event reconstruction logic maintains invariants.
+ * **Correctness Claim**: These tests validate that event reconstruction is
+ * **correct** when given complete event history (no missing events, no reorgs).
+ * The reconstruction logic maintains invariants (sum(balances) == totalSupply)
+ * and produces state that matches on-chain storage in ideal conditions.
+ * 
+ * **Boundary**: In production, event reconstruction may be incomplete due to:
+ * - Pagination limits (not all events retrieved)
+ * - Chain reorganizations (events from orphaned blocks)
+ * - Missing historical data
+ * In such cases, reconstruction is "best-effort diagnostic" rather than verifier.
  */
 describe("StateQueryService - Event Reconstruction", () => {
   let mockProvider: ethers.Provider;

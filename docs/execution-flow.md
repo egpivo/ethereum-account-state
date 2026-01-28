@@ -80,12 +80,14 @@ StateQueryService.reconstructStateFromEvents()
 - For batch burns: All `Transfer(..., address(0), ...)` events are processed, all `Burn` events are skipped
 - This design ensures consistency across event reconstruction, UI display, and standard ERC20 parsers
 
-**Important Boundary**: Event-based reconstruction is used as an **educational and diagnostic technique**. It is **not a verifier** and can be incomplete without:
+**Correctness**: When given complete event history (all events, no reorgs), event reconstruction is **correct** and produces state that matches on-chain storage. This is validated by comprehensive tests covering event ordering, burn deduplication, and complex scenarios.
+
+**Boundary**: In production, reconstruction may be incomplete and is therefore "best-effort diagnostic" rather than a verifier. Limitations include:
 - Pagination (for large event histories)
 - Reorg handling (for chain reorganizations)
 - Storage-first reconciliation (for production accuracy)
 
-This implementation demonstrates the concept but should not be relied upon as the sole source of truth in production systems.
+This implementation demonstrates correctness in ideal conditions (validated by tests) but should not be relied upon as the sole source of truth in production systems without pagination and reorg handling.
 
 ## Separation of Concerns
 

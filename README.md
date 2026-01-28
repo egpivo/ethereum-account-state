@@ -214,8 +214,9 @@ This ensures that off-chain reasoning (domain validation, state reconstruction) 
 ### State Query Methods
 
 1. **Storage Reads**: Direct `eth_call` to contract functions (production-ready)
-2. **Event Reconstruction**: Replay events to rebuild state (educational/diagnostic)
-   - **Boundary**: Not a verifier; can be incomplete without pagination, reorg handling, or storage-first reconciliation
+2. **Event Reconstruction**: Replay events to rebuild state
+   - **Correctness**: Validated by tests - produces correct state when given complete event history
+   - **Boundary**: In production, may be incomplete (pagination, reorgs) - "best-effort diagnostic"
 3. **Comparison**: Compare storage state vs derived state (for diagnostic purposes)
 
 ## Tech Stack
