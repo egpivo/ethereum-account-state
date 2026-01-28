@@ -9,12 +9,12 @@
 
 set -e
 
-echo "🚀 Deploying Token contract to Sepolia testnet..."
+echo "Deploying Token contract to Sepolia testnet..."
 
 # Check if .env exists
 if [ ! -f .env ]; then
-    echo "❌ Error: .env file not found"
-    echo "📝 Please create .env file with PRIVATE_KEY"
+    echo "Error: .env file not found"
+    echo "Please create .env file with PRIVATE_KEY"
     echo "   Format: PRIVATE_KEY=0x... (do NOT use 'export' in .env file)"
     echo "   Example: PRIVATE_KEY=0x1234567890abcdef..."
     exit 1
@@ -29,21 +29,21 @@ set +a  # Stop automatically exporting
 
 # Check if PRIVATE_KEY is set
 if [ -z "$PRIVATE_KEY" ]; then
-    echo "❌ Error: PRIVATE_KEY not set in .env file"
+    echo "Error: PRIVATE_KEY not set in .env file"
     exit 1
 fi
 
 # Use Sepolia RPC (public endpoint, no API key needed)
 RPC_URL="${SEPOLIA_RPC_URL:-https://rpc.sepolia.dev}"
 
-echo "📡 Using RPC: $RPC_URL"
-echo "🔑 Private key loaded (last 4 chars: ${PRIVATE_KEY: -4})"
+echo "Using RPC: $RPC_URL"
+echo "Private key loaded (last 4 chars: ${PRIVATE_KEY: -4})"
 
 # Check if verification is enabled
 if [ -n "$ETHERSCAN_API_KEY" ]; then
-    echo "✅ Contract verification enabled (Etherscan API key found)"
+    echo "Contract verification enabled (Etherscan API key found)"
 else
-    echo "ℹ️  Contract verification disabled (ETHERSCAN_API_KEY not set)"
+    echo "Contract verification disabled (ETHERSCAN_API_KEY not set)"
     echo "   Deployment will proceed without verification"
 fi
 echo ""
@@ -58,9 +58,9 @@ forge script contracts/script/DeploySepolia.s.sol:DeploySepolia \
     -vvv
 
 echo ""
-echo "✅ Deployment complete!"
+echo "Deployment complete!"
 echo ""
-echo "📝 Next steps:"
+echo "Next steps:"
 echo "   1. Copy the deployed contract address"
 echo "   2. Add TOKEN_ADDRESS to your .env file"
 echo "   3. Use the address in your frontend"

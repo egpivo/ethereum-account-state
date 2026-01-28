@@ -27,8 +27,8 @@ This document defines the authorization model for the Token contract.
 **Rationale**: Minimal implementation for educational/testing. Suitable for simple use cases where minting is intentionally unrestricted.
 
 **Security Implications**:
-- ⚠️ Anyone can create tokens (unlimited supply possible)
-- ✅ State machine correctness maintained
+- Anyone can create tokens (unlimited supply possible)
+- State machine correctness maintained
 
 **For Production**: Add authorization controls (e.g., `onlyOwner`, `onlyMinter`, `onlyGovernance`).
 

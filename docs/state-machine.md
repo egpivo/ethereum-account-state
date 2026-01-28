@@ -112,9 +112,9 @@ The following operations revert:
 
 | On-Chain (Solidity) | Off-Chain (TypeScript) | Consistency |
 |---------------------|------------------------|-------------|
-| `revert ZeroAddress` | `throw Error("Cannot ... to zero address")` | ✅ Matched |
-| `revert ZeroAmount` | `throw Error("... amount must be greater than zero")` | ✅ Matched |
-| `revert InsufficientBalance` | `throw Error("Insufficient balance ...")` | ✅ Matched |
+| `revert ZeroAddress` | `throw Error("Cannot ... to zero address")` | Matched |
+| `revert ZeroAmount` | `throw Error("... amount must be greater than zero")` | Matched |
+| `revert InsufficientBalance` | `throw Error("Insufficient balance ...")` | Matched |
 
 ### Why This Matters
 

@@ -48,27 +48,27 @@ library ReentrancyGuard {
 ### Currently Used Layers
 
 **Domain Layer**:
-- ✅ `Token` entity: Used in `StateQueryService.reconstructStateFromEvents()` for event-based state reconstruction
-- ✅ `StateTransition` service: Used for domain validation (integrated into `WalletService`)
-- ✅ `Address`, `Balance` value objects: Used throughout application layer
+- `Token` entity: Used in `StateQueryService.reconstructStateFromEvents()` for event-based state reconstruction
+- `StateTransition` service: Used for domain validation (integrated into `WalletService`)
+- `Address`, `Balance` value objects: Used throughout application layer
 
 **Application Layer**:
-- ✅ `WalletService`: Wallet operations (signing, sending transactions)
-- ✅ `StateQueryService`: State querying (storage reads, event reconstruction)
+- `WalletService`: Wallet operations (signing, sending transactions)
+- `StateQueryService`: State querying (storage reads, event reconstruction)
 
 **Infrastructure Layer**:
-- ✅ `EthereumProvider`: RPC provider factory
-- ✅ `ContractRepository`: On-chain state repository
+- `EthereumProvider`: RPC provider factory
+- `ContractRepository`: On-chain state repository
 
 ### Exploratory / Future Layers
 
 **Domain Layer**:
-- ⚠️ `Account` entity: Defined but not currently used in application services
+- `Account` entity: Defined but not currently used in application services
   - **Future Use**: Could be used for account-level business logic if needed
   - **Current Approach**: Direct use of `Address` and `Balance` value objects is sufficient
 
 **Domain Layer**:
-- ⚠️ `ITokenRepository` interface: Defined but not fully utilized
+- `ITokenRepository` interface: Defined but not fully utilized
   - **Future Use**: Could enable repository pattern for testability and abstraction
   - **Current Approach**: Direct RPC calls via `StateQueryService` are sufficient
 

@@ -30,12 +30,12 @@ library BalanceLib {
 
 **Example**:
 ```solidity
-// ❌ Won't compile:
+// Won't compile:
 Balance amount = BalanceLib.from(1000);
 uint256 price = 50;
 Balance total = amount.add(price); // Error!
 
-// ✅ Works:
+// Works:
 Balance amount1 = BalanceLib.from(1000);
 Balance amount2 = BalanceLib.from(500);
 Balance total = amount1.add(amount2); // Type-safe
