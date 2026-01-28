@@ -41,7 +41,7 @@ npm run lint
 
 ## Docs
 
-- `docs/local-development.md` - 連接 MetaMask 到本地 Anvil 節點
+- `docs/local-development.md` - Connet MetaMask to the local Anvil node
 - `docs/state-machine.md`
 - `docs/execution-flow.md`
 - `docs/authorization-model.md`
