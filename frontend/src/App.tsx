@@ -286,9 +286,10 @@ function App() {
         contract.queryFilter(contract.filters.Burn(), fromBlock),
       ])
 
-      // Track burn transactions to avoid duplicate display
-      // Contract emits both Burn and Transfer(..., address(0), ...) for burns
-      // We'll only show Transfer(..., address(0), ...) as "Burn" to avoid duplication
+      // Deduplicate burn events: Contract emits both Burn and Transfer(..., address(0), ...) for burns
+      // Canonical event source: Transfer(..., address(0), ...) is the ERC20 standard burn signal
+      // Strategy: Show Transfer(..., address(0), ...) as "Burn", skip explicit Burn events from same transaction
+      // This matches the backend reconstruction logic and prevents duplicate display
       const burnTxHashes = new Set<string>()
       for (const e of transferEvents) {
         if (e.args.to === ethers.ZeroAddress) {
@@ -309,7 +310,8 @@ function App() {
           logIndex: e.index !== null ? Number(e.index) : 0,
         })),
         ...transferEvents.map((e: any) => {
-          // If Transfer to address(0), display as "Burn" instead of "Transfer"
+          // Transfer(..., address(0), ...) is the canonical burn signal (ERC20 standard)
+          // Display it as "Burn" type to match user expectations
           const isBurn = e.args.to === ethers.ZeroAddress
           return {
             type: isBurn ? 'Burn' : 'Transfer',
@@ -321,7 +323,9 @@ function App() {
             logIndex: e.index !== null ? Number(e.index) : 0,
           }
         }),
-        // Only include Burn events that don't have a corresponding Transfer(..., address(0), ...)
+        // Skip explicit Burn events if the transaction has Transfer(..., address(0), ...)
+        // This prevents duplicate display: both events represent the same burn operation
+        // Fallback: Only show Burn events if Transfer(..., address(0), ...) is missing (shouldn't happen)
         ...burnEvents
           .filter((e: any) => !burnTxHashes.has(e.transactionHash))
           .map((e: any) => ({

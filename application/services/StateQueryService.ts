@@ -86,12 +86,18 @@ export class StateQueryService {
    * - Skip ALL Burn events from transactions that have Transfer(..., address(0), ...)
    * - This ensures each burn operation is processed exactly once, maintaining sum(balances) == totalSupply
    * 
-   * Multiple Burns per Transaction:
-   * - The current Token contract does not support batch burns, but the implementation handles it correctly:
+   * Multiple Burns per Transaction (Batch/Multicall Support):
+   * - The implementation correctly handles multiple burns per transaction:
    *   - If a transaction has multiple burn operations (e.g., via multicall), each emits Burn + Transfer(..., address(0), ...)
    *   - We process ALL Transfer(..., address(0), ...) events (one per burn operation)
    *   - We skip ALL Burn events if the transaction has any Transfer(..., address(0), ...)
    *   - This works because we process events chronologically and use Transfer(..., address(0), ...) as canonical
+   * 
+   * **Canonical Event Source**:
+   * - Transfer(..., address(0), ...) is the **canonical** burn signal (ERC20 standard)
+   * - Burn events are **redundant** and are only used as a fallback if Transfer(..., address(0), ...) is missing
+   * - This design choice ensures compatibility with ERC20 tooling and standard event parsers
+   * - For batch burns: All Transfer(..., address(0), ...) events are processed, all Burn events are skipped
    * 
    * Implementation:
    * 1. First pass: Scan transaction for Transfer(..., address(0), ...) events, set hasTransferBurn flag

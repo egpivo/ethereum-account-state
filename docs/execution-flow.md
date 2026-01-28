@@ -72,7 +72,13 @@ StateQueryService.reconstructStateFromEvents()
 [Result] Reconstructed Token entity
 ```
 
-**Critical**: The contract emits both `Burn` and `Transfer(..., address(0), ...)` for burns. To prevent double-counting, reconstruction uses `Transfer(..., address(0), ...)` as the canonical signal and skips `Burn` events from the same transaction.
+**Critical**: The contract emits both `Burn` and `Transfer(..., address(0), ...)` for burns. To prevent double-counting, reconstruction uses `Transfer(..., address(0), ...)` as the **canonical signal** (ERC20 standard) and skips `Burn` events from the same transaction.
+
+**Canonical Event Source**:
+- `Transfer(..., address(0), ...)` is the canonical burn signal (ERC20 standard, compatible with all ERC20 tooling)
+- `Burn` events are redundant and only used as a fallback if `Transfer(..., address(0), ...)` is missing
+- For batch burns: All `Transfer(..., address(0), ...)` events are processed, all `Burn` events are skipped
+- This design ensures consistency across event reconstruction, UI display, and standard ERC20 parsers
 
 **Important Boundary**: Event-based reconstruction is used as an **educational and diagnostic technique**. It is **not a verifier** and can be incomplete without:
 - Pagination (for large event histories)
