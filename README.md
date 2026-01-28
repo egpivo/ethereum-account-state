@@ -1,5 +1,7 @@
 # Ethereum Account State
 
+[![CI](https://github.com/joseph/ethereum-account-state/actions/workflows/ci.yml/badge.svg)](https://github.com/joseph/ethereum-account-state/actions/workflows/ci.yml)
+
 A Domain-Driven Design (DDD) implementation of an Ethereum token and wallet system, focusing on state machine correctness, clear separation of concerns, and comprehensive testing.
 
 ## Project Philosophy
