@@ -126,11 +126,44 @@ function App() {
     }
   };
 
-  // MetaMask does not support programmatic disconnect.
-  // "Disconnect" here means: clear app state and stop using the connected signer/provider.
-  // Note: MetaMask remembers authorization. After disconnect, clicking "Connect Wallet" again
-  // will reconnect to the same account without prompting. To switch accounts, disconnect
-  // in MetaMask's UI or switch accounts there.
+  // Switch account: Request permissions again to allow user to select a different account
+  const switchAccount = async () => {
+    try {
+      if (typeof window.ethereum === "undefined") {
+        setError("Please install MetaMask");
+        return;
+      }
+
+      // Request permissions again - this will prompt MetaMask to show account selection
+      await window.ethereum.request({
+        method: "wallet_requestPermissions",
+        params: [{ eth_accounts: {} }],
+      });
+
+      // After permission request, get the new account
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const accounts = await provider.send("eth_requestAccounts", []);
+      const signer = await provider.getSigner();
+      const network = await provider.getNetwork();
+
+      setProvider(provider);
+      setSigner(signer);
+      setAccount(accounts[0]);
+      setChainId(network.chainId);
+      setError("");
+    } catch (err: any) {
+      // User rejected or cancelled
+      if (err.code === 4001) {
+        setError("Account switch cancelled");
+      } else {
+        setError(err.message || "Failed to switch account");
+      }
+    }
+  };
+
+  // Disconnect wallet: Clear app state
+  // Note: MetaMask remembers authorization. To truly disconnect and allow account selection
+  // on next connect, use "Switch Account" button instead, or disconnect in MetaMask's UI.
   const disconnectWallet = () => {
     setProvider(null);
     setSigner(null);
@@ -540,13 +573,20 @@ function App() {
                 <strong>Connected:</strong> {account.slice(0, 6)}...
                 {account.slice(-4)}
               </p>
-              <button
-                onClick={disconnectWallet}
-                className="btn btn-secondary"
-                style={{ marginTop: "0.75rem" }}
-              >
-                Disconnect
-              </button>
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
+                <button
+                  onClick={switchAccount}
+                  className="btn btn-secondary"
+                >
+                  Switch Account
+                </button>
+                <button
+                  onClick={disconnectWallet}
+                  className="btn btn-secondary"
+                >
+                  Disconnect
+                </button>
+              </div>
             </div>
 
             <div className="section">
