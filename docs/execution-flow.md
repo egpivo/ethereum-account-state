@@ -31,11 +31,13 @@ WalletService.transfer()
 ```
 
 **Error Handling**:
+
 - Domain validation fails → Return error before transaction (no gas spent)
 - Transaction reverts → Receipt contains revert reason (gas spent)
 - Network failure → Exception thrown
 
 **Critical**: Domain validation rules (`StateTransition.validate*()`) and entity rules (`Token.mint/transfer/burn()`) **must mirror** on-chain contract rules exactly. This ensures:
+
 - Off-chain validation catches the same errors as on-chain (preventing wasted gas)
 - State reconstruction applies the same rules (maintaining consistency)
 - Off-chain reasoning matches on-chain behavior (preventing model inconsistencies)
@@ -75,6 +77,7 @@ StateQueryService.reconstructStateFromEvents()
 **Critical**: The contract emits both `Burn` and `Transfer(..., address(0), ...)` for burns. To prevent double-counting, reconstruction uses `Transfer(..., address(0), ...)` as the **canonical signal** (ERC20 standard) and skips `Burn` events from the same transaction.
 
 **Canonical Event Source**:
+
 - `Transfer(..., address(0), ...)` is the canonical burn signal (ERC20 standard, compatible with all ERC20 tooling)
 - `Burn` events are redundant and only used as a fallback if `Transfer(..., address(0), ...)` is missing
 - For batch burns: All `Transfer(..., address(0), ...)` events are processed, all `Burn` events are skipped
@@ -83,6 +86,7 @@ StateQueryService.reconstructStateFromEvents()
 **Correctness**: When given complete event history (all events, no reorgs), event reconstruction is **correct** and produces state that matches on-chain storage. This is validated by comprehensive tests covering event ordering, burn deduplication, and complex scenarios.
 
 **Boundary**: In production, reconstruction may be incomplete and is therefore "best-effort diagnostic" rather than a verifier. Limitations include:
+
 - Pagination (for large event histories)
 - Reorg handling (for chain reorganizations)
 - Storage-first reconciliation (for production accuracy)
@@ -96,14 +100,17 @@ This implementation demonstrates correctness in ideal conditions (validated by t
 **Important**: This separation is a **conceptual model** for understanding the system architecture, not an enforced on-chain property in this minimal implementation.
 
 **Wallet** (`WalletService`):
+
 - Owns private key, signs transactions, submits to network
 - Does NOT manage state
 
 **State** (`Token` contract):
+
 - Maintains balances, enforces rules, emits events
 - Does NOT know about wallets
 
 **Authority** (Conceptual):
+
 - In this minimal implementation: **Minting is intentionally permissionless**
 - Authority separation is presented as a conceptual model for understanding system design
 - For production use, authority would be enforced on-chain (see [Authorization Model](../docs/authorization-model.md))

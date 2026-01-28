@@ -8,12 +8,12 @@ import { StateQueryService } from "./StateQueryService.js";
 /**
  * @application Service: WalletService
  * @description Application service for wallet operations (signing, sending transactions)
- * 
+ *
  * Separation of concerns:
  * - Wallet: signing & transaction submission
  * - State: managed by smart contract
  * - Authority: determined by private key ownership
- * 
+ *
  * Uses domain validation (StateTransition) to ensure off-chain rules match on-chain rules,
  * preventing wasted gas on invalid transactions.
  */
@@ -68,7 +68,7 @@ export class WalletService {
     });
 
     const receipt = await tx.wait();
-    
+
     // tx.wait() can return null if the transaction was dropped or wait times out
     // This violates the non-nullable return type, so we throw an error
     if (receipt === null) {
@@ -76,7 +76,7 @@ export class WalletService {
         `Transaction ${tx.hash} was dropped or wait timed out. Receipt is null.`
       );
     }
-    
+
     return receipt;
   }
 
@@ -91,12 +91,20 @@ export class WalletService {
     // Domain validation: ensure off-chain rules match on-chain rules
     // This prevents wasted gas on invalid transactions
     const from = this.getAddress();
-    
+
     // Reconstruct current state from events for validation
     // Note: In production, you might want to cache this or use storage reads
-    const currentToken = await this.stateQueryService.reconstructStateFromEvents(this.tokenAddress);
-    
-    const validation = StateTransition.validateTransfer(currentToken, from, to, amount);
+    const currentToken =
+      await this.stateQueryService.reconstructStateFromEvents(
+        this.tokenAddress
+      );
+
+    const validation = StateTransition.validateTransfer(
+      currentToken,
+      from,
+      to,
+      amount
+    );
     if (!validation.valid) {
       throw new Error(`Transfer validation failed: ${validation.reason}`);
     }
@@ -117,16 +125,16 @@ export class WalletService {
    * Execute a token mint (if wallet has minting authority)
    * @dev Uses domain validation (StateTransition) to ensure off-chain rules match on-chain rules
    */
-  async mint(
-    to: Address,
-    amount: Balance
-  ): Promise<ethers.TransactionReceipt> {
+  async mint(to: Address, amount: Balance): Promise<ethers.TransactionReceipt> {
     // Domain validation: ensure off-chain rules match on-chain rules
     // Reconstruct current state for consistency with transfer() and burn()
     // While mint validation doesn't currently depend on existing balances, using
     // the actual current state ensures consistency and prevents future bugs if
     // mint validation rules change (e.g., max supply checks)
-    const currentToken = await this.stateQueryService.reconstructStateFromEvents(this.tokenAddress);
+    const currentToken =
+      await this.stateQueryService.reconstructStateFromEvents(
+        this.tokenAddress
+      );
     const validation = StateTransition.validateMint(currentToken, to, amount);
     if (!validation.valid) {
       throw new Error(`Mint validation failed: ${validation.reason}`);
@@ -148,13 +156,14 @@ export class WalletService {
    * Execute a token burn
    * @dev Uses domain validation (StateTransition) to ensure off-chain rules match on-chain rules
    */
-  async burn(
-    amount: Balance
-  ): Promise<ethers.TransactionReceipt> {
+  async burn(amount: Balance): Promise<ethers.TransactionReceipt> {
     // Domain validation: ensure off-chain rules match on-chain rules
-    const currentToken = await this.stateQueryService.reconstructStateFromEvents(this.tokenAddress);
+    const currentToken =
+      await this.stateQueryService.reconstructStateFromEvents(
+        this.tokenAddress
+      );
     const from = this.getAddress();
-    
+
     const validation = StateTransition.validateBurn(currentToken, from, amount);
     if (!validation.valid) {
       throw new Error(`Burn validation failed: ${validation.reason}`);

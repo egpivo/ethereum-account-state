@@ -33,7 +33,7 @@ export class Token {
    * @domain State Transition: Mint tokens
    * @invariant sum(balances) == totalSupply must hold after this operation
    *           (Guaranteed by construction, cannot be verified on-chain)
-   * 
+   *
    * @dev Validation rules MUST mirror on-chain contract rules:
    *      - to != address(0) (reverts ZeroAddress)
    *      - amount > 0 (reverts ZeroAmount)
@@ -57,7 +57,7 @@ export class Token {
    * @domain State Transition: Transfer tokens
    * @invariant sum(balances) == totalSupply must hold after this operation
    *           (Guaranteed by construction, cannot be verified on-chain)
-   * 
+   *
    * @dev Validation rules MUST mirror on-chain contract rules:
    *      - to != address(0) (reverts ZeroAddress)
    *      - amount > 0 (reverts ZeroAmount)
@@ -88,7 +88,7 @@ export class Token {
    * @domain State Transition: Burn tokens
    * @invariant sum(balances) == totalSupply must hold after this operation
    *           (Guaranteed by construction, cannot be verified on-chain)
-   * 
+   *
    * @dev Validation rules MUST mirror on-chain contract rules:
    *      - amount > 0 (reverts ZeroAmount)
    *      - balances[from] >= amount (reverts InsufficientBalance)

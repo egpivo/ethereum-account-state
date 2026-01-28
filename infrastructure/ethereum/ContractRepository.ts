@@ -7,7 +7,7 @@ import { StateQueryService } from "../../application/services/StateQueryService.
 /**
  * @infrastructure ContractRepository
  * @description Implementation of ITokenRepository using on-chain queries
- * 
+ *
  * **Design Choice**: Best-effort diagnostic mode (not fail-fast)
  * - State mismatches between storage and event reconstruction are logged but do not throw
  * - This is intentional for educational/diagnostic purposes
@@ -23,9 +23,8 @@ export class ContractRepository implements ITokenRepository {
   async getByAddress(address: Address): Promise<Token | null> {
     try {
       // Reconstruct token state from events
-      const token = await this.stateQueryService.reconstructStateFromEvents(
-        address
-      );
+      const token =
+        await this.stateQueryService.reconstructStateFromEvents(address);
 
       // Verify against current storage state (best-effort diagnostic check)
       const totalSupply = await this.stateQueryService.getTotalSupply(address);

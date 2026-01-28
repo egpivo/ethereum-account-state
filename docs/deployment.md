@@ -10,13 +10,14 @@
    - Wait for confirmation
 
 2. **Set Up Environment**:
+
    ```bash
    cp .env.example .env
    # Edit .env and add your PRIVATE_KEY
    # Format: PRIVATE_KEY=0x... (do NOT use 'export' in .env file)
    # Optional: Add ETHERSCAN_API_KEY if you want contract verification
    ```
-   
+
    **Important**: The `.env` file should use format `PRIVATE_KEY=0x...` (without `export`). The deployment script automatically exports variables using `set -a`.
 
 3. **Verify Balance**:
@@ -53,6 +54,7 @@ forge script contracts/script/DeploySepolia.s.sol:DeploySepolia \
 ```
 
 **Important Notes**:
+
 - **Environment Variables**: When using the script (`deploy-sepolia.sh`), variables in `.env` are automatically exported. For manual deployment, you must use `export` commands.
 - **Contract Verification**: `--verify` is **optional** and **disabled by default**. It only runs if `ETHERSCAN_API_KEY` is set. Deployment works perfectly without verification.
 - **`.env` File Format**: Use `PRIVATE_KEY=0x...` (without `export`) in `.env` file. The script handles exporting automatically.
@@ -62,6 +64,7 @@ forge script contracts/script/DeploySepolia.s.sol:DeploySepolia \
 **RPC Endpoint**: `https://rpc.sepolia.dev` (public, no API key needed)
 
 **Network Details**:
+
 - Chain ID: 11155111
 - Block Explorer: https://sepolia.etherscan.io
 - PoS (Proof of Stake) - no mining needed
@@ -69,6 +72,7 @@ forge script contracts/script/DeploySepolia.s.sol:DeploySepolia \
 ### After Deployment
 
 1. **Save Contract Address**:
+
    ```bash
    # Add to .env
    TOKEN_ADDRESS=0x...
@@ -87,15 +91,18 @@ forge script contracts/script/DeploySepolia.s.sol:DeploySepolia \
 ### Troubleshooting
 
 **Insufficient Gas**:
+
 - Get more test ETH from faucet
 - Check gas price on Sepolia
 
 **Deployment Fails**:
+
 - Verify PRIVATE_KEY is correct
 - Check RPC endpoint is accessible
 - Ensure contract compiles: `forge build`
 
 **Verification Fails**:
+
 - Contract works perfectly without verification
 - Verification is optional and only runs if `ETHERSCAN_API_KEY` is set
 - To enable verification: add `ETHERSCAN_API_KEY=your_key` to `.env` file

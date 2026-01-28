@@ -16,11 +16,13 @@ This document defines the state machine for the Token contract, including state 
 **Critical Invariant**: `sum(balances) == totalSupply` must hold at all times.
 
 **Limitation**: This invariant **cannot be verified on-chain** because mappings are not enumerable. However, it is **guaranteed by construction** through state transitions:
+
 - Mint: Both `totalSupply` and `balances[to]` increase by the same amount
 - Transfer: `totalSupply` unchanged, balances shift between accounts
 - Burn: Both `totalSupply` and `balances[from]` decrease by the same amount
 
 **Verification Methods** (off-chain):
+
 1. Event reconstruction: Replay events and verify `sum(balances) == totalSupply` (educational/diagnostic)
    - **Boundary**: Not a verifier; can be incomplete without pagination, reorg handling, or storage-first reconciliation
 2. Testing: Track known accounts and verify the invariant
@@ -33,6 +35,7 @@ This document defines the state machine for the Token contract, including state 
 **Function**: `mint(address to, uint256 amount)`
 
 **Authorization**: **Intentionally permissionless** (anyone can call)
+
 - This is a **design choice** for this minimal implementation, not a missing feature
 - Suitable for educational/testing purposes where state machine correctness is the focus
 - For production use, see [Authorization Model](./authorization-model.md) for extension patterns
@@ -40,6 +43,7 @@ This document defines the state machine for the Token contract, including state 
 **Preconditions**: `to != address(0)`, `amount > 0`
 
 **State Transition**:
+
 ```
 totalSupply: S → S + amount
 balances[to]: B → B + amount
@@ -58,6 +62,7 @@ balances[to]: B → B + amount
 **Preconditions**: `to != address(0)`, `amount > 0`, `balances[msg.sender] >= amount`
 
 **State Transition**:
+
 ```
 balances[from]: B_from → B_from - amount
 balances[to]: B_to → B_to + amount
@@ -77,16 +82,19 @@ totalSupply: S → S (unchanged)
 **Preconditions**: `amount > 0`, `balances[msg.sender] >= amount`
 
 **State Transition**:
+
 ```
 totalSupply: S → S - amount
 balances[from]: B → B - amount
 ```
 
 **Events**:
+
 - `Burn(from, amount)` - Explicit burn event (redundant with Transfer)
 - `Transfer(from, address(0), amount)` - **Canonical burn signal** (ERC20 standard)
 
 **Event Semantics for Reconstruction**:
+
 - Both events are emitted for the same burn operation but have different logIndex values
 - `Transfer(..., address(0), ...)` is the **canonical** burn signal (ERC20 standard, compatible with all ERC20 tooling)
 - `Burn` events are redundant and only used as fallback if `Transfer(..., address(0), ...)` is missing
@@ -99,6 +107,7 @@ balances[from]: B → B - amount
 ## Illegal State Transitions
 
 The following operations revert:
+
 1. Zero address operations (mint/transfer to `address(0)`)
 2. Zero amount operations
 3. Insufficient balance (transfer/burn)
@@ -110,11 +119,11 @@ The following operations revert:
 
 ### Validation Rules Alignment
 
-| On-Chain (Solidity) | Off-Chain (TypeScript) | Consistency |
-|---------------------|------------------------|-------------|
-| `revert ZeroAddress` | `throw Error("Cannot ... to zero address")` | Matched |
-| `revert ZeroAmount` | `throw Error("... amount must be greater than zero")` | Matched |
-| `revert InsufficientBalance` | `throw Error("Insufficient balance ...")` | Matched |
+| On-Chain (Solidity)          | Off-Chain (TypeScript)                                | Consistency |
+| ---------------------------- | ----------------------------------------------------- | ----------- |
+| `revert ZeroAddress`         | `throw Error("Cannot ... to zero address")`           | Matched     |
+| `revert ZeroAmount`          | `throw Error("... amount must be greater than zero")` | Matched     |
+| `revert InsufficientBalance` | `throw Error("Insufficient balance ...")`             | Matched     |
 
 ### Why This Matters
 

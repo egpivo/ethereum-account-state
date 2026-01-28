@@ -21,9 +21,5 @@
     "infrastructure/**/*",
     "tests/**/*"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "contracts"
-  ]
+  "exclude": ["node_modules", "dist", "contracts"]
 }

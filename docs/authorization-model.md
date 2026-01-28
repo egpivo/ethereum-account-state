@@ -4,7 +4,8 @@
 
 This document defines the authorization model for the Token contract.
 
-**Important Design Note**: 
+**Important Design Note**:
+
 - **Minting is intentionally permissionless** in this minimal implementation
 - **Authority separation** (wallet ≠ state ≠ authority) is presented as a **conceptual model**, not an enforced on-chain property
 - This is a design choice for educational/testing purposes, demonstrating state machine correctness without access control complexity
@@ -12,11 +13,11 @@ This document defines the authorization model for the Token contract.
 
 ## Current Authorization Model
 
-| Operation | Authorization | Mechanism |
-|-----------|--------------|-----------|
-| `mint` | Public (anyone) | None |
-| `transfer` | Self-only | `msg.sender` |
-| `burn` | Self-only | `msg.sender` |
+| Operation  | Authorization   | Mechanism    |
+| ---------- | --------------- | ------------ |
+| `mint`     | Public (anyone) | None         |
+| `transfer` | Self-only       | `msg.sender` |
+| `burn`     | Self-only       | `msg.sender` |
 
 ## Operation Details
 
@@ -27,6 +28,7 @@ This document defines the authorization model for the Token contract.
 **Rationale**: Minimal implementation for educational/testing. Suitable for simple use cases where minting is intentionally unrestricted.
 
 **Security Implications**:
+
 - Anyone can create tokens (unlimited supply possible)
 - State machine correctness maintained
 
@@ -51,6 +53,7 @@ This document defines the authorization model for the Token contract.
 ## Extension Patterns (Production)
 
 ### Owner-Based Minting
+
 ```solidity
 modifier onlyOwner() {
     require(msg.sender == owner, "Not owner");
@@ -60,6 +63,7 @@ function mint(...) external onlyOwner { ... }
 ```
 
 ### Role-Based Minting
+
 ```solidity
 mapping(address => bool) public minters;
 modifier onlyMinter() {
@@ -70,6 +74,7 @@ function mint(...) external onlyMinter { ... }
 ```
 
 ### Cap-Based Minting
+
 ```solidity
 uint256 public maxSupply;
 function mint(...) external {
@@ -84,6 +89,7 @@ function mint(...) external {
 - **Validation**: Whether the operation is valid
 
 Current implementation:
+
 - `mint`: No authorization check; validates `to != address(0)`, `amount > 0`
 - `transfer`: `msg.sender` is owner; validates `to != address(0)`, `amount > 0`, `balance >= amount`
 - `burn`: `msg.sender` is owner; validates `amount > 0`, `balance >= amount`

@@ -6,18 +6,18 @@ import { StateQueryService } from "../../application/services/StateQueryService.
 
 /**
  * Test suite for StateQueryService.reconstructStateFromEvents
- * 
+ *
  * This tests the most fragile logic in the system:
  * 1. Event ordering (chronological processing)
  * 2. Burn deduplication (preventing double-counting)
  * 3. Batch burn handling (multiple burns per transaction)
  * 4. Cross-transaction ordering
- * 
+ *
  * **Correctness Claim**: These tests validate that event reconstruction is
  * **correct** when given complete event history (no missing events, no reorgs).
  * The reconstruction logic maintains invariants (sum(balances) == totalSupply)
  * and produces state that matches on-chain storage in ideal conditions.
- * 
+ *
  * **Boundary**: In production, event reconstruction may be incomplete due to:
  * - Pagination limits (not all events retrieved)
  * - Chain reorganizations (events from orphaned blocks)
@@ -99,7 +99,8 @@ describe("StateQueryService - Event Reconstruction", () => {
 
       // Same transaction: Mint at logIndex 0, Transfer at logIndex 1
       // If processed out of order, Transfer would fail with "Insufficient balance"
-      const txHash = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+      const txHash =
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
       const logs = [
         createMockLog(
           "Mint",
@@ -136,7 +137,8 @@ describe("StateQueryService - Event Reconstruction", () => {
 
       // Same transaction: Transfer at logIndex 0, Mint at logIndex 1
       // getLogs might return them in wrong order, but reconstruction should sort correctly
-      const txHash = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+      const txHash =
+        "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
       const logs = [
         createMockLog(
           "Transfer",
@@ -212,7 +214,8 @@ describe("StateQueryService - Event Reconstruction", () => {
 
       // Same transaction emits both Burn and Transfer(..., address(0), ...)
       // Both represent the same burn operation but have different logIndex values
-      const txHash = "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
+      const txHash =
+        "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
       const logs = [
         createMockLog(
           "Mint",
@@ -257,7 +260,8 @@ describe("StateQueryService - Event Reconstruction", () => {
 
       // Burn event comes before Transfer(0) in same transaction
       // Should still deduplicate correctly using transaction-level flag
-      const txHash = "0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+      const txHash =
+        "0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
       const logs = [
         createMockLog(
           "Mint",
@@ -303,7 +307,8 @@ describe("StateQueryService - Event Reconstruction", () => {
       // Same transaction has multiple burns (e.g., via multicall)
       // Each burn emits both Burn and Transfer(0)
       // Should process ALL Transfer(0) events, skip ALL Burn events
-      const txHash = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+      const txHash =
+        "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
       const logs = [
         createMockLog(
           "Mint",
@@ -366,7 +371,8 @@ describe("StateQueryService - Event Reconstruction", () => {
 
       // Edge case: Only Burn event, no Transfer(0)
       // Should process Burn as fallback (shouldn't happen in our contract, but handles edge cases)
-      const txHash = "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+      const txHash =
+        "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
       const logs = [
         createMockLog(
           "Mint",
@@ -411,7 +417,14 @@ describe("StateQueryService - Event Reconstruction", () => {
       // 4. Mint to Bob (500)
       // 5. Transfer Bob -> Alice (200)
       const logs = [
-        createMockLog("Mint", { to: alice.getValue(), amount: 1000n }, 100, 0, 0, "0xtx1"),
+        createMockLog(
+          "Mint",
+          { to: alice.getValue(), amount: 1000n },
+          100,
+          0,
+          0,
+          "0xtx1"
+        ),
         createMockLog(
           "Transfer",
           { from: alice.getValue(), to: bob.getValue(), amount: 300n },
@@ -436,7 +449,14 @@ describe("StateQueryService - Event Reconstruction", () => {
           1,
           "0xtx3"
         ),
-        createMockLog("Mint", { to: bob.getValue(), amount: 500n }, 100, 3, 0, "0xtx4"),
+        createMockLog(
+          "Mint",
+          { to: bob.getValue(), amount: 500n },
+          100,
+          3,
+          0,
+          "0xtx4"
+        ),
         createMockLog(
           "Transfer",
           { from: bob.getValue(), to: alice.getValue(), amount: 200n },

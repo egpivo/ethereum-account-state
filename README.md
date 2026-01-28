@@ -27,6 +27,7 @@ ethereum-account-state/
 ```
 
 **Key Files**:
+
 - `contracts/src/Token.sol` - Smart contract (state machine)
 - `application/services/WalletService.ts` - Wallet operations
 - `application/services/StateQueryService.ts` - State querying & event reconstruction
@@ -71,11 +72,13 @@ ethereum-account-state/
 **Key Separation**: Wallet ≠ State ≠ Authority
 
 **Important Design Note**:
+
 - **Minting is intentionally permissionless** in this minimal implementation
 - **Authority separation** is a conceptual model, not an enforced on-chain property
 - For production use, see [Authorization Model](./docs/authorization-model.md)
 
 **Domain Integration**:
+
 - `WalletService` uses `StateTransition` for pre-transaction validation
 - `StateQueryService` uses `Token` for reconstruction and invariant checks
 
@@ -138,23 +141,29 @@ npm test
 **Development Flow**:
 
 1. **Start local blockchain** (Anvil):
+
    ```bash
    anvil
    ```
+
    This starts a local Ethereum node at `http://localhost:8545`
 
 2. **Deploy contract to local node** (in another terminal):
+
    ```bash
    npm run deploy:local
    ```
+
    Copy the deployed contract address from the output.
 
 3. **Start frontend** (in another terminal):
+
    ```bash
    cd frontend
    npm install  # First time only
    npm run dev
    ```
+
    The frontend will open at `http://localhost:3000`
 
 4. **Connect to local network**:
@@ -164,6 +173,7 @@ npm test
    - Connect wallet in the frontend
 
 **Alternative: Use Testnet** (no local node needed):
+
 - Deploy to Sepolia testnet (see below)
 - Start frontend: `cd frontend && npm run dev`
 - Connect MetaMask to Sepolia network
@@ -175,13 +185,16 @@ npm test
 1. **Get test ETH**: Visit [RubyScore Faucet](https://docs.rubyscore.io/) to get Sepolia test ETH
 
 2. **Deploy contract**:
+
    ```bash
    # Set PRIVATE_KEY in .env file
    npm run deploy:sepolia
    ```
+
    Copy the deployed contract address from the output.
 
 3. **Start frontend**:
+
    ```bash
    cd frontend
    npm install  # First time only
@@ -237,6 +250,7 @@ The token contract is designed as a deterministic state machine:
 - **Illegal Transitions**: Revert with custom errors
 
 **Critical Consistency Requirement**: Off-chain domain models (TypeScript `Token` entity) **must mirror** on-chain contract rules exactly:
+
 - Zero address operations → Revert (on-chain) / Throw error (off-chain)
 - Zero amount operations → Revert `ZeroAmount` (on-chain) / Throw error (off-chain)
 - Insufficient balance → Revert `InsufficientBalance` (on-chain) / Throw error (off-chain)

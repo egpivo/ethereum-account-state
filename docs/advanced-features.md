@@ -9,6 +9,7 @@ This document explains the advanced Solidity features used in the Token contract
 **What**: Type-safe wrapper around `uint256` to prevent logic errors.
 
 **Implementation**:
+
 ```solidity
 type Balance is uint256;
 
@@ -24,11 +25,13 @@ library BalanceLib {
 ```
 
 **Benefits**:
+
 - Prevents mixing amounts with prices, timestamps, or other `uint256` values
 - Zero runtime cost (compile-time check)
 - Protocol-grade code quality
 
 **Example**:
+
 ```solidity
 // Won't compile:
 Balance amount = BalanceLib.from(1000);
@@ -46,6 +49,7 @@ Balance total = amount1.add(amount2); // Type-safe
 **What**: Attach library functions to types, enabling method-style syntax.
 
 **Implementation**:
+
 ```solidity
 using BalanceLib for Balance;
 
@@ -58,11 +62,13 @@ totalSupply = BalanceLib.add(totalSupply, amountBalance);
 ```
 
 **Benefits**:
+
 - Improved readability
 - Type safety
 - Audit-friendly code
 
 **Example**:
+
 ```solidity
 // Without using:
 BalanceLib.add(BalanceLib.sub(balance, amount), fee)
@@ -75,15 +81,15 @@ balance.sub(amount).add(fee)
 
 ```solidity
 function transfer(address to, uint256 amount) external {
-    
+
     Balance amountBalance = BalanceLib.from(amount);
     Balance fromBalance = balances[msg.sender];
-    
+
     if (!fromBalance.gte(amountBalance)) revert InsufficientBalance();
-    
+
     balances[msg.sender] = fromBalance.sub(amountBalance);  // Type-safe
     balances[to] = balances[to].add(amountBalance);          // Readable
-    
+
 }
 ```
 

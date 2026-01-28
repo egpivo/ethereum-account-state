@@ -2,7 +2,11 @@
   "extends": "solhint:recommended",
   "rules": {
     "compiler-version": ["error", "^0.8.28"],
-    "func-name-mixedcase": "warn",
-    "no-empty-blocks": "warn"
+    "func-name-mixedcase": "off",
+    "no-empty-blocks": "warn",
+    "no-console": "off",
+    "one-contract-per-file": "off",
+    "state-visibility": "off",
+    "func-visibility": "off"
   }
 }

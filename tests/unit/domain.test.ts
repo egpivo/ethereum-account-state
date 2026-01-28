@@ -8,8 +8,12 @@ import { StateTransition } from "../../domain/services/StateTransition.js";
 describe("Domain Layer", () => {
   describe("Address", () => {
     it("should create valid address", () => {
-      const address = Address.from("0x1234567890123456789012345678901234567890");
-      expect(address.getValue()).toBe("0x1234567890123456789012345678901234567890");
+      const address = Address.from(
+        "0x1234567890123456789012345678901234567890"
+      );
+      expect(address.getValue()).toBe(
+        "0x1234567890123456789012345678901234567890"
+      );
     });
 
     it("should reject invalid address", () => {
@@ -55,7 +59,9 @@ describe("Domain Layer", () => {
 
   describe("Account", () => {
     it("should create account", () => {
-      const address = Address.from("0x1234567890123456789012345678901234567890");
+      const address = Address.from(
+        "0x1234567890123456789012345678901234567890"
+      );
       const account = Account.create(address);
       expect(account.getBalance().getValue()).toBe(0n);
     });
@@ -88,7 +94,9 @@ describe("Domain Layer", () => {
 
   describe("Token", () => {
     it("should create token", () => {
-      const address = Address.from("0x1234567890123456789012345678901234567890");
+      const address = Address.from(
+        "0x1234567890123456789012345678901234567890"
+      );
       const token = Token.create(address);
       expect(token.getTotalSupply().getValue()).toBe(0n);
     });

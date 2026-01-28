@@ -21,7 +21,10 @@ export class StateTransition {
     }
 
     if (amount.getValue() === 0n) {
-      return { valid: false, reason: "Transfer amount must be greater than zero" };
+      return {
+        valid: false,
+        reason: "Transfer amount must be greater than zero",
+      };
     }
 
     const fromBalance = token.getBalance(from);
