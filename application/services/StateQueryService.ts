@@ -169,10 +169,11 @@ export class StateQueryService {
       return aMin.transactionIndex - bMin.transactionIndex;
     });
     
-    // Track processed burns using a composite key: txHash + from + amount + logIndex
-    // This allows multiple burns in the same transaction (e.g., batch operations) to be processed correctly
-    // while still preventing double-counting of the same burn event (Burn + Transfer(..., address(0), ...))
-    const processedBurns = new Set<string>();
+    // Track processed burns per transaction
+    // Use Transfer(..., address(0), ...) as canonical burn signal
+    // If a transaction has Transfer(..., address(0), ...), skip Burn events from the same transaction
+    // This prevents double-counting since Burn and Transfer(..., address(0), ...) have different logIndex values
+    const txHasTransferBurn = new Set<string>(); // Track which transactions have Transfer(..., address(0), ...)
     
     for (const [txHash, txLogs] of sortedTxEntries) {
       // Sort logs within transaction by tuple: (blockNumber, transactionIndex, logIndex)
@@ -183,8 +184,20 @@ export class StateQueryService {
         return a.logIndex - b.logIndex;
       });
       
-      // Process events in chronological order
-      for (const { parsed, log, logIndex } of sortedLogs) {
+      // First pass: identify transactions with Transfer(..., address(0), ...) events
+      // This allows us to skip Burn events from the same transaction
+      for (const { parsed } of sortedLogs) {
+        if (parsed.name === "Transfer") {
+          const to = Address.from(parsed.args.to);
+          if (to.isZero()) {
+            txHasTransferBurn.add(txHash);
+            break; // Found Transfer burn in this transaction, no need to check further
+          }
+        }
+      }
+      
+      // Second pass: process events in chronological order
+      for (const { parsed } of sortedLogs) {
         if (parsed.name === "Mint") {
           const to = Address.from(parsed.args.to);
           const amount = Balance.from(parsed.args.amount);
@@ -196,34 +209,24 @@ export class StateQueryService {
           
           // Transfer to address(0) is the ERC20 canonical burn signal
           if (to.isZero()) {
-            // Create a composite key for this burn: txHash + from + amount + logIndex
-            // This allows multiple burns in the same transaction while preventing duplicate processing
-            const burnKey = `${txHash}:${from.getValue()}:${amount.toString()}:${logIndex}`;
-            
-            // Only process if this specific burn hasn't been processed yet
-            // (either via this Transfer event or a corresponding Burn event)
-            if (!processedBurns.has(burnKey)) {
-              token.burn(from, amount);
-              processedBurns.add(burnKey);
-            }
+            // Always process Transfer(..., address(0), ...) as the canonical burn
+            token.burn(from, amount);
           } else {
             // Normal transfer
             token.transfer(from, to, amount);
           }
         } else if (parsed.name === "Burn") {
-          const from = Address.from(parsed.args.from);
-          const amount = Balance.from(parsed.args.amount);
-          
-          // Create the same composite key for this burn
-          // If Transfer(..., address(0), ...) was already processed, this Burn will be skipped
-          const burnKey = `${txHash}:${from.getValue()}:${amount.toString()}:${logIndex}`;
-          
-          // Only process if this specific burn hasn't been processed yet
-          // (either via this Burn event or a corresponding Transfer(..., address(0), ...) event)
-          if (!processedBurns.has(burnKey)) {
+          // Skip Burn events if this transaction already has Transfer(..., address(0), ...)
+          // The contract emits both events for the same burn operation, but they have different logIndex
+          // We use Transfer(..., address(0), ...) as the canonical signal
+          if (!txHasTransferBurn.has(txHash)) {
+            // Fallback: process Burn event only if there's no Transfer(..., address(0), ...) in this transaction
+            // (This should not happen in our contract, but handles edge cases)
+            const from = Address.from(parsed.args.from);
+            const amount = Balance.from(parsed.args.amount);
             token.burn(from, amount);
-            processedBurns.add(burnKey);
           }
+          // If txHasTransferBurn.has(txHash) is true, skip this Burn event to avoid double-counting
         }
       }
     }
