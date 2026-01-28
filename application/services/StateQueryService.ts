@@ -169,11 +169,10 @@ export class StateQueryService {
       return aMin.transactionIndex - bMin.transactionIndex;
     });
     
-    // Track processed burns per transaction
-    // Use Transfer(..., address(0), ...) as canonical burn signal
-    // If a transaction has Transfer(..., address(0), ...), skip Burn events from the same transaction
-    // This prevents double-counting since Burn and Transfer(..., address(0), ...) have different logIndex values
-    const txHasTransferBurn = new Set<string>(); // Track which transactions have Transfer(..., address(0), ...)
+    // Process events: Use Transfer(..., address(0), ...) as canonical burn signal
+    // Skip Burn events if the same transaction has any Transfer(..., address(0), ...)
+    // This prevents double-counting since Burn and Transfer(..., address(0), ...) represent the same operation
+    // but have different logIndex values (cannot use logIndex for deduplication)
     
     for (const [txHash, txLogs] of sortedTxEntries) {
       // Sort logs within transaction by tuple: (blockNumber, transactionIndex, logIndex)
@@ -184,14 +183,15 @@ export class StateQueryService {
         return a.logIndex - b.logIndex;
       });
       
-      // First pass: identify transactions with Transfer(..., address(0), ...) events
-      // This allows us to skip Burn events from the same transaction
+      // First pass: Check if this transaction has any Transfer(..., address(0), ...) events
+      // Use a simple boolean flag at transaction level (not logIndex-based)
+      let hasTransferBurn = false;
       for (const { parsed } of sortedLogs) {
         if (parsed.name === "Transfer") {
           const to = Address.from(parsed.args.to);
           if (to.isZero()) {
-            txHasTransferBurn.add(txHash);
-            break; // Found Transfer burn in this transaction, no need to check further
+            hasTransferBurn = true;
+            break; // Found Transfer burn, no need to check further
           }
         }
       }
@@ -216,17 +216,17 @@ export class StateQueryService {
             token.transfer(from, to, amount);
           }
         } else if (parsed.name === "Burn") {
-          // Skip Burn events if this transaction already has Transfer(..., address(0), ...)
-          // The contract emits both events for the same burn operation, but they have different logIndex
-          // We use Transfer(..., address(0), ...) as the canonical signal
-          if (!txHasTransferBurn.has(txHash)) {
+          // CRITICAL: Skip Burn events if this transaction has any Transfer(..., address(0), ...)
+          // Both events represent the same burn operation but have different logIndex values
+          // Using tx-level flag (not logIndex) ensures we don't double-count
+          if (!hasTransferBurn) {
             // Fallback: process Burn event only if there's no Transfer(..., address(0), ...) in this transaction
             // (This should not happen in our contract, but handles edge cases)
             const from = Address.from(parsed.args.from);
             const amount = Balance.from(parsed.args.amount);
             token.burn(from, amount);
           }
-          // If txHasTransferBurn.has(txHash) is true, skip this Burn event to avoid double-counting
+          // If hasTransferBurn is true, skip this Burn event completely to avoid double-counting
         }
       }
     }
