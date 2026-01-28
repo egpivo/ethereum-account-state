@@ -72,6 +72,10 @@ function App() {
     totalEvents: number;
   } | null>(null);
 
+  function isEventLog(e: ethers.Log | ethers.EventLog): e is ethers.EventLog {
+    return (e as ethers.EventLog).args !== undefined;
+  }
+
   // Connect wallet
   const connectWallet = async () => {
     try {
@@ -307,12 +311,16 @@ function App() {
         contract.queryFilter(contract.filters.Burn(), fromBlock),
       ]);
 
+      const mintEventLogs = mintEvents.filter(isEventLog);
+      const transferEventLogs = transferEvents.filter(isEventLog);
+      const burnEventLogs = burnEvents.filter(isEventLog);
+
       // Deduplicate burn events: Contract emits both Burn and Transfer(..., address(0), ...) for burns
       // Canonical event source: Transfer(..., address(0), ...) is the ERC20 standard burn signal
       // Strategy: Show Transfer(..., address(0), ...) as "Burn", skip explicit Burn events from same transaction
       // This matches the backend reconstruction logic and prevents duplicate display
       const burnTxHashes = new Set<string>();
-      for (const e of transferEvents) {
+      for (const e of transferEventLogs) {
         if (e.args.to === ethers.ZeroAddress) {
           burnTxHashes.add(e.transactionHash);
         }
@@ -321,7 +329,7 @@ function App() {
       // Contract stores amounts as raw uint256 (no decimal scaling)
       // Display as-is without formatEther conversion
       const allEvents = [
-        ...mintEvents.map((e: any) => ({
+        ...mintEventLogs.map((e) => ({
           type: "Mint",
           from: "N/A",
           to: e.args.to,
@@ -330,7 +338,7 @@ function App() {
           blockNumber: e.blockNumber,
           logIndex: e.index !== null ? Number(e.index) : 0,
         })),
-        ...transferEvents.map((e: any) => {
+        ...transferEventLogs.map((e) => {
           // Transfer(..., address(0), ...) is the canonical burn signal (ERC20 standard)
           // Display it as "Burn" type to match user expectations
           const isBurn = e.args.to === ethers.ZeroAddress;
@@ -347,9 +355,9 @@ function App() {
         // Skip explicit Burn events if the transaction has Transfer(..., address(0), ...)
         // This prevents duplicate display: both events represent the same burn operation
         // Fallback: Only show Burn events if Transfer(..., address(0), ...) is missing (shouldn't happen)
-        ...burnEvents
-          .filter((e: any) => !burnTxHashes.has(e.transactionHash))
-          .map((e: any) => ({
+        ...burnEventLogs
+          .filter((e) => !burnTxHashes.has(e.transactionHash))
+          .map((e) => ({
             type: "Burn",
             from: e.args.from,
             to: "0x0000...0000",
