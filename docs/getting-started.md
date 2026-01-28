@@ -63,4 +63,3 @@ cp .env.example .env
 npm run deploy:sepolia
 cd frontend && npm install && npm run dev
 ```
-
