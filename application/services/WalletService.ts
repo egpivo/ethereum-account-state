@@ -122,8 +122,12 @@ export class WalletService {
     amount: Balance
   ): Promise<ethers.TransactionReceipt> {
     // Domain validation: ensure off-chain rules match on-chain rules
-    const token = Token.create(this.tokenAddress);
-    const validation = StateTransition.validateMint(token, to, amount);
+    // Reconstruct current state for consistency with transfer() and burn()
+    // While mint validation doesn't currently depend on existing balances, using
+    // the actual current state ensures consistency and prevents future bugs if
+    // mint validation rules change (e.g., max supply checks)
+    const currentToken = await this.stateQueryService.reconstructStateFromEvents(this.tokenAddress);
+    const validation = StateTransition.validateMint(currentToken, to, amount);
     if (!validation.valid) {
       throw new Error(`Mint validation failed: ${validation.reason}`);
     }
