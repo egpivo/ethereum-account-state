@@ -15,27 +15,23 @@ This project demonstrates:
 
 ```
 ethereum-account-state/
-├── contracts/              # Smart Contract Layer
-│   ├── src/
-│   │   └── Token.sol      # Core state machine contract
-│   └── test/
-│       ├── Token.t.sol    # Unit tests
-│       └── Invariant.t.sol # Invariant tests
-├── domain/                 # Domain Layer (DDD Core)
-│   ├── entities/          # Aggregate roots and entities
-│   ├── value-objects/     # Value objects
-│   ├── services/          # Domain services
-│   └── repositories/      # Repository interfaces
-├── application/           # Application Layer
-│   └── services/          # Application services
-├── infrastructure/        # Infrastructure Layer
-│   └── ethereum/          # Ethereum provider implementations
-├── tests/                 # TypeScript tests
-│   └── unit/              # Domain layer unit tests
-└── docs/                  # Documentation
-    ├── state-machine.md   # State machine specification
-    └── execution-flow.md   # Execution flow documentation
+├── contracts/          # Solidity contracts (Foundry)
+│   ├── src/Token.sol  # Core token contract
+│   └── test/          # Foundry tests
+├── domain/            # Domain layer (entities, value objects, services)
+├── application/       # Application services (WalletService, StateQueryService)
+├── infrastructure/    # Infrastructure (Ethereum providers, repositories)
+├── frontend/          # React frontend (wallet UI)
+├── tests/             # TypeScript unit tests
+└── docs/              # Documentation
 ```
+
+**Key Files**:
+- `contracts/src/Token.sol` - Smart contract (state machine)
+- `application/services/WalletService.ts` - Wallet operations
+- `application/services/StateQueryService.ts` - State querying & event reconstruction
+- `domain/entities/Token.ts` - Domain entity (used in reconstruction)
+- `frontend/src/App.tsx` - Web UI
 
 ## Architecture Layers
 
