@@ -83,13 +83,16 @@ balances[from]: B → B - amount
 ```
 
 **Events**:
-- `Burn(from, amount)` - Explicit burn event
-- `Transfer(from, address(0), amount)` - ERC20 canonical supply reduction signal
+- `Burn(from, amount)` - Explicit burn event (redundant with Transfer)
+- `Transfer(from, address(0), amount)` - **Canonical burn signal** (ERC20 standard)
 
-**Event Semantics**: 
-- Both events are emitted for the same burn operation
-- `Transfer(..., address(0), ...)` is the ERC20 standard way to signal token destruction
-- **Critical for reconstruction**: When reconstructing state from events, use `Transfer(..., address(0), ...)` as the canonical signal and skip `Burn` events from the same transaction to avoid double-counting
+**Event Semantics for Reconstruction**:
+- Both events are emitted for the same burn operation but have different logIndex values
+- `Transfer(..., address(0), ...)` is the **canonical** burn signal (ERC20 standard, compatible with all ERC20 tooling)
+- `Burn` events are redundant and only used as fallback if `Transfer(..., address(0), ...)` is missing
+- **Critical for reconstruction**: Use `Transfer(..., address(0), ...)` as the canonical signal and skip `Burn` events from the same transaction
+- **Batch burns**: If a transaction has multiple burns, all `Transfer(..., address(0), ...)` events are processed, all `Burn` events are skipped
+- This design ensures consistency across event reconstruction, UI display, and standard ERC20 parsers
 
 **Reverts**: `ZeroAmount`, `InsufficientBalance`
 
