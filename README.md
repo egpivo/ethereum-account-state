@@ -20,7 +20,7 @@ npm run deploy:local
 cd frontend && npm install && npm run dev
 ```
 
-- MetaMask: `http://localhost:8545` (chainId 31337)
+- MetaMask: `http://localhost:8545` (chainId `31337`)
 
 ### Sepolia
 
@@ -41,13 +41,13 @@ npm run lint
 
 ## Docs
 
-- `docs/local-development.md` - Connet MetaMask to the local Anvil node
-- `docs/state-machine.md`
-- `docs/execution-flow.md`
-- `docs/authorization-model.md`
-- `docs/deployment.md`
-- `docs/advanced-features.md`
-- `docs/future-work.md`
+- [docs/README.md](docs/README.md)
+- [docs/getting-started.md](docs/getting-started.md)
+- [docs/state-machine.md](docs/state-machine.md)
+- [docs/execution-flow.md](docs/execution-flow.md)
+- [docs/authorization-model.md](docs/authorization-model.md)
+- [docs/deployment.md](docs/deployment.md)
+- [docs/advanced-features.md](docs/advanced-features.md)
 
 ## GitHub Pages
 
