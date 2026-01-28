@@ -315,8 +315,12 @@ export class StateQueryService {
           // Handle errors in Address.from() or Balance.from() calls
           // Invalid event arguments (e.g., invalid address format, negative amounts) will be skipped
           // This prevents the entire reconstruction from crashing due to malformed events
+          const logIndexStr =
+            log.index !== null && log.index !== undefined
+              ? log.index.toString()
+              : "unknown";
           console.warn(
-            `Failed to process ${parsed.name} event (tx: ${log.transactionHash}, logIndex: ${log.logIndex}):`,
+            `Failed to process ${parsed.name} event (tx: ${log.transactionHash}, logIndex: ${logIndexStr}):`,
             error
           );
           // Continue processing other events - best-effort reconstruction

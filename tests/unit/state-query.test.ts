@@ -89,7 +89,7 @@ describe("StateQueryService - Event Reconstruction", () => {
       topics: topics.topics,
       transactionHash: txHash,
       transactionIndex: BigInt(transactionIndex),
-    };
+    } as unknown as ethers.Log;
   }
 
   describe("Event Ordering", () => {
