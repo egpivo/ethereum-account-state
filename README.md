@@ -1,6 +1,5 @@
 # Ethereum Account State
-
-[![CI](https://github.com/joseph/ethereum-account-state/actions/workflows/ci.yml/badge.svg)](https://github.com/joseph/ethereum-account-state/actions/workflows/ci.yml)
+[![CI](https://github.com/egpivo/ethereum-account-state/actions/workflows/ci.yml/badge.svg)](https://github.com/egpivo/ethereum-account-state/actions/workflows/ci.yml)
 
 Minimal Ethereum token system designed as a deterministic state machine, with explicit transitions, off-chain reasoning, and comprehensive tests.
 
