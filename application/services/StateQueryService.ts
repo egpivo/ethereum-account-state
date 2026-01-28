@@ -208,51 +208,71 @@ export class StateQueryService {
       // This implements the contract's requirement: "skip Burn events from the same transaction"
       // that has Transfer(..., address(0), ...)
       let hasTransferBurn = false;
-      for (const { parsed } of sortedLogs) {
+      for (const { parsed, log } of sortedLogs) {
         if (parsed.name === "Transfer") {
-          const to = Address.from(parsed.args.to);
-          if (to.isZero()) {
-            hasTransferBurn = true;
-            break; // Found Transfer burn, this transaction will skip Burn events
+          try {
+            const to = Address.from(parsed.args.to);
+            if (to.isZero()) {
+              hasTransferBurn = true;
+              break; // Found Transfer burn, this transaction will skip Burn events
+            }
+          } catch (error) {
+            // Invalid address in event - log warning and skip this event
+            console.warn(
+              `Invalid address in Transfer event (tx: ${log.transactionHash}):`,
+              error
+            );
+            // Continue processing other events
           }
         }
       }
       
       // Second pass: process events in chronological order
       // This implements: "Reconstruction must use Transfer(..., address(0), ...) as canonical signal"
-      for (const { parsed } of sortedLogs) {
-        if (parsed.name === "Mint") {
-          const to = Address.from(parsed.args.to);
-          const amount = Balance.from(parsed.args.amount);
-          token.mint(to, amount);
-        } else if (parsed.name === "Transfer") {
-          const from = Address.from(parsed.args.from);
-          const to = Address.from(parsed.args.to);
-          const amount = Balance.from(parsed.args.amount);
-          
-          // Transfer to address(0) is the ERC20 canonical burn signal
-          // This is the canonical signal as documented in Token.sol
-          if (to.isZero()) {
-            // Always process Transfer(..., address(0), ...) as the canonical burn
-            // This matches the contract documentation requirement
-            token.burn(from, amount);
-          } else {
-            // Normal transfer
-            token.transfer(from, to, amount);
-          }
-        } else if (parsed.name === "Burn") {
-          // CRITICAL: Skip Burn events if this transaction has Transfer(..., address(0), ...)
-          // This matches the contract documentation: "Burn events from the same transaction must be skipped"
-          // Both events represent the same burn operation but have different logIndex values
-          // Using tx-level flag (not logIndex-based) ensures correct deduplication
-          if (!hasTransferBurn) {
-            // Fallback: process Burn event only if there's no Transfer(..., address(0), ...) in this transaction
-            // (This should not happen in our contract, but handles edge cases)
-            const from = Address.from(parsed.args.from);
+      for (const { parsed, log } of sortedLogs) {
+        try {
+          if (parsed.name === "Mint") {
+            const to = Address.from(parsed.args.to);
             const amount = Balance.from(parsed.args.amount);
-            token.burn(from, amount);
+            token.mint(to, amount);
+          } else if (parsed.name === "Transfer") {
+            const from = Address.from(parsed.args.from);
+            const to = Address.from(parsed.args.to);
+            const amount = Balance.from(parsed.args.amount);
+            
+            // Transfer to address(0) is the ERC20 canonical burn signal
+            // This is the canonical signal as documented in Token.sol
+            if (to.isZero()) {
+              // Always process Transfer(..., address(0), ...) as the canonical burn
+              // This matches the contract documentation requirement
+              token.burn(from, amount);
+            } else {
+              // Normal transfer
+              token.transfer(from, to, amount);
+            }
+          } else if (parsed.name === "Burn") {
+            // CRITICAL: Skip Burn events if this transaction has Transfer(..., address(0), ...)
+            // This matches the contract documentation: "Burn events from the same transaction must be skipped"
+            // Both events represent the same burn operation but have different logIndex values
+            // Using tx-level flag (not logIndex-based) ensures correct deduplication
+            if (!hasTransferBurn) {
+              // Fallback: process Burn event only if there's no Transfer(..., address(0), ...) in this transaction
+              // (This should not happen in our contract, but handles edge cases)
+              const from = Address.from(parsed.args.from);
+              const amount = Balance.from(parsed.args.amount);
+              token.burn(from, amount);
+            }
+            // If hasTransferBurn is true, skip this Burn event completely (as documented in Token.sol)
           }
-          // If hasTransferBurn is true, skip this Burn event completely (as documented in Token.sol)
+        } catch (error) {
+          // Handle errors in Address.from() or Balance.from() calls
+          // Invalid event arguments (e.g., invalid address format, negative amounts) will be skipped
+          // This prevents the entire reconstruction from crashing due to malformed events
+          console.warn(
+            `Failed to process ${parsed.name} event (tx: ${log.transactionHash}, logIndex: ${log.logIndex}):`,
+            error
+          );
+          // Continue processing other events - best-effort reconstruction
         }
       }
     }
