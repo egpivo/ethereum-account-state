@@ -12,17 +12,31 @@ Anvil 會在 `http://127.0.0.1:8545` 運行，Chain ID 為 `31337`。
 
 ### 2. 在 MetaMask 中添加本地網絡
 
-1. 打開 MetaMask
-2. 點擊網絡選擇器（通常顯示 "Ethereum Mainnet"）
-3. 點擊 "Add Network" 或 "Add a network manually"
-4. 填入以下信息：
+**方法 1：通過網絡選擇器（推薦）**
+
+1. 打開 MetaMask 擴展
+2. 點擊右上角的**網絡選擇器**（顯示當前網絡名稱，如 "Ethereum Mainnet"）
+3. 在彈出菜單的**底部**，點擊 **"Add a network"** 或 **"Add network"**
+4. 選擇 **"Add a network manually"** 或 **"Add a network manually"**
+5. 填入以下信息：
    - **Network Name**: `Anvil Local`
-   - **RPC URL**: `http://127.0.0.1:8545`
+   - **New RPC URL**: `http://127.0.0.1:8545`
    - **Chain ID**: `31337`
    - **Currency Symbol**: `ETH`
-   - **Block Explorer URL**: (留空)
+   - **Block Explorer URL**: （留空，不需要填寫）
 
-5. 點擊 "Save"
+6. 點擊 **"Save"**
+
+**方法 2：通過設置頁面**
+
+1. 在 MetaMask 中點擊右上角的三條線（☰）打開菜單
+2. 選擇 **"Settings"**
+3. 在左側菜單中選擇 **"Networks"**
+4. 點擊 **"Add a network"** 按鈕（通常在頁面頂部或底部）
+5. 選擇 **"Add a network manually"**
+6. 填入上述信息並保存
+
+**注意**：如果你看到的是 "Supported Networks" 頁面（只顯示已支持網絡的列表），這不是添加自定義網絡的地方。請使用**方法 1**（通過網絡選擇器）來添加。
 
 ### 3. 導入測試賬戶到 MetaMask
 
