@@ -54,6 +54,7 @@ export class WalletService {
 
   /**
    * Send a transaction and wait for receipt
+   * @throws Error if transaction wait times out or fails (tx.wait() returns null)
    */
   async sendTransaction(
     to: Address,
@@ -66,7 +67,17 @@ export class WalletService {
       value,
     });
 
-    return await tx.wait();
+    const receipt = await tx.wait();
+    
+    // tx.wait() can return null if the transaction was dropped or wait times out
+    // This violates the non-nullable return type, so we throw an error
+    if (receipt === null) {
+      throw new Error(
+        `Transaction ${tx.hash} was dropped or wait timed out. Receipt is null.`
+      );
+    }
+    
+    return receipt;
   }
 
   /**
