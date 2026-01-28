@@ -16,19 +16,56 @@ const TOKEN_ABI = [
 ]
 
 // Get Etherscan URL based on chainId
+// Returns '#' for unsupported chains to prevent incorrect links
 function getEtherscanUrl(chainId: bigint, txHash: string): string {
   const chainIdNum = Number(chainId)
+  
+  // Mainnet
   if (chainIdNum === 1) {
     return `https://etherscan.io/tx/${txHash}`
-  } else if (chainIdNum === 11155111) {
-    return `https://sepolia.etherscan.io/tx/${txHash}`
-  } else if (chainIdNum === 31337) {
-    // Local Anvil
-    return `#`
-  } else {
-    // Fallback to mainnet
-    return `https://etherscan.io/tx/${txHash}`
   }
+  
+  // Testnets
+  if (chainIdNum === 11155111) {
+    // Sepolia
+    return `https://sepolia.etherscan.io/tx/${txHash}`
+  }
+  
+  // Layer 2 / Other networks
+  if (chainIdNum === 42161) {
+    // Arbitrum One
+    return `https://arbiscan.io/tx/${txHash}`
+  }
+  if (chainIdNum === 421614) {
+    // Arbitrum Sepolia
+    return `https://sepolia.arbiscan.io/tx/${txHash}`
+  }
+  if (chainIdNum === 8453) {
+    // Base Mainnet
+    return `https://basescan.org/tx/${txHash}`
+  }
+  if (chainIdNum === 84532) {
+    // Base Sepolia
+    return `https://sepolia.basescan.org/tx/${txHash}`
+  }
+  if (chainIdNum === 10) {
+    // Optimism Mainnet
+    return `https://optimistic.etherscan.io/tx/${txHash}`
+  }
+  if (chainIdNum === 11155420) {
+    // Optimism Sepolia
+    return `https://sepolia-optimism.etherscan.io/tx/${txHash}`
+  }
+  
+  // Local development
+  if (chainIdNum === 31337) {
+    // Local Anvil/Hardhat
+    return `#`
+  }
+  
+  // Unknown chain: return '#' to prevent incorrect mainnet links
+  // This prevents users on other testnets from seeing wrong links
+  return `#`
 }
 
 function App() {
@@ -542,7 +579,9 @@ function App() {
                             rel="noopener noreferrer"
                             className="tx-link"
                             onClick={(e) => {
-                              if (!chainId || Number(chainId) === 31337) {
+                              const url = chainId ? getEtherscanUrl(chainId, event.txHash) : '#'
+                              // Disable link if URL is '#' (unsupported chain or local network)
+                              if (url === '#') {
                                 e.preventDefault()
                               }
                             }}
