@@ -128,6 +128,9 @@ function App() {
 
   // MetaMask does not support programmatic disconnect.
   // "Disconnect" here means: clear app state and stop using the connected signer/provider.
+  // Note: MetaMask remembers authorization. After disconnect, clicking "Connect Wallet" again
+  // will reconnect to the same account without prompting. To switch accounts, disconnect
+  // in MetaMask's UI or switch accounts there.
   const disconnectWallet = () => {
     setProvider(null);
     setSigner(null);
@@ -141,6 +144,47 @@ function App() {
     setEventBlockRange(null);
     setError("");
   };
+
+  // Listen for MetaMask account/chain changes
+  useEffect(() => {
+    if (typeof window.ethereum === "undefined") return;
+
+    const handleAccountsChanged = (accounts: string[]) => {
+      if (accounts.length === 0) {
+        // User disconnected in MetaMask - clear app state
+        setProvider(null);
+        setSigner(null);
+        setAccount("");
+        setChainId(null);
+        setBalance("0");
+        setTotalSupply("0");
+        setEvents([]);
+        setEventBlockRange(null);
+        setError("");
+      } else if (accounts[0] !== account) {
+        // User switched accounts in MetaMask - update UI
+        setAccount(accounts[0]);
+        if (provider) {
+          provider.getSigner().then((signer) => {
+            setSigner(signer);
+          });
+        }
+      }
+    };
+
+    const handleChainChanged = () => {
+      // Reload page on chain change to ensure clean state
+      window.location.reload();
+    };
+
+    window.ethereum.on("accountsChanged", handleAccountsChanged);
+    window.ethereum.on("chainChanged", handleChainChanged);
+
+    return () => {
+      window.ethereum?.removeListener("accountsChanged", handleAccountsChanged);
+      window.ethereum?.removeListener("chainChanged", handleChainChanged);
+    };
+  }, [account, provider]);
 
   // Validate address
   const validateAddress = (address: string): boolean => {
@@ -432,6 +476,39 @@ function App() {
       setEventBlockRange(null);
     }
   };
+
+  // Listen for MetaMask account/chain changes
+  useEffect(() => {
+    if (typeof window.ethereum === "undefined") return;
+
+    const handleAccountsChanged = (accounts: string[]) => {
+      if (accounts.length === 0) {
+        // User disconnected in MetaMask
+        disconnectWallet();
+      } else if (accounts[0] !== account) {
+        // User switched accounts in MetaMask
+        setAccount(accounts[0]);
+        if (provider) {
+          provider.getSigner().then((signer) => {
+            setSigner(signer);
+          });
+        }
+      }
+    };
+
+    const handleChainChanged = () => {
+      // Reload page on chain change to ensure clean state
+      window.location.reload();
+    };
+
+    window.ethereum.on("accountsChanged", handleAccountsChanged);
+    window.ethereum.on("chainChanged", handleChainChanged);
+
+    return () => {
+      window.ethereum?.removeListener("accountsChanged", handleAccountsChanged);
+      window.ethereum?.removeListener("chainChanged", handleChainChanged);
+    };
+  }, [account, provider]);
 
   // Auto-load balance when account or token address changes
   useEffect(() => {
