@@ -55,7 +55,14 @@ clean:
 # Deploy to local Anvil network
 deploy-local:
 	@echo "Deploying to local Anvil network..."
-	@echo "Make sure Anvil is running: anvil"
+	@echo "Checking if Anvil is running..."
+	@if ! lsof -Pi :8545 -sTCP:LISTEN -t >/dev/null 2>&1 ; then \
+		echo "❌ Error: Anvil is not running on port 8545"; \
+		echo "Please start Anvil first: anvil"; \
+		echo "Or run in another terminal: anvil"; \
+		exit 1; \
+	fi
+	@echo "✅ Anvil is running"
 	npm run deploy:local
 
 # Deploy to Sepolia testnet
