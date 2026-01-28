@@ -608,24 +608,24 @@ function App() {
               </div>
             </div>
 
-            <div className="section">
-              <h2>Token Contract</h2>
-              <div className="input-group">
-                <input
-                  type="text"
-                  placeholder="Token contract address"
-                  value={tokenAddress}
-                  onChange={(e) => setTokenAddress(e.target.value)}
-                  className="input"
-                />
-                <button onClick={loadBalance} className="btn btn-secondary">
-                  Load
-                </button>
+            <div className="row row--top">
+              <div className="section">
+                <h2>Token Contract</h2>
+                <div className="input-group">
+                  <input
+                    type="text"
+                    placeholder="Token contract address"
+                    value={tokenAddress}
+                    onChange={(e) => setTokenAddress(e.target.value)}
+                    className="input"
+                  />
+                  <button onClick={loadBalance} className="btn btn-secondary">
+                    Load
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {tokenAddress && (
-              <>
+              {tokenAddress && (
                 <div className="section">
                   <h2>Balance</h2>
                   <div className="balance-display">
@@ -642,78 +642,84 @@ function App() {
                     Refresh
                   </button>
                 </div>
+              )}
+            </div>
 
-                <div className="section">
-                  <h2>Transfer</h2>
-                  <div className="form">
-                    <input
-                      type="text"
-                      placeholder="Recipient address"
-                      value={transferTo}
-                      onChange={(e) => setTransferTo(e.target.value)}
-                      className="input"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Amount"
-                      value={transferAmount}
-                      onChange={(e) => setTransferAmount(e.target.value)}
-                      className="input"
-                    />
-                    <button
-                      onClick={handleTransfer}
-                      disabled={loading}
-                      className="btn btn-primary"
-                    >
-                      {loading ? "Processing..." : "Transfer"}
-                    </button>
+            {tokenAddress && (
+              <>
+                <div className="row row--actions">
+                  <div className="section">
+                    <h2>Transfer</h2>
+                    <div className="form">
+                      <input
+                        type="text"
+                        placeholder="Recipient address"
+                        value={transferTo}
+                        onChange={(e) => setTransferTo(e.target.value)}
+                        className="input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Amount"
+                        value={transferAmount}
+                        onChange={(e) => setTransferAmount(e.target.value)}
+                        className="input"
+                      />
+                      <button
+                        onClick={handleTransfer}
+                        disabled={loading}
+                        className="btn btn-primary"
+                      >
+                        {loading ? "Processing..." : "Transfer"}
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <div className="section">
-                  <h2>Mint</h2>
-                  <div className="form">
-                    <input
-                      type="text"
-                      placeholder="Recipient address"
-                      value={mintTo}
-                      onChange={(e) => setMintTo(e.target.value)}
-                      className="input"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Amount"
-                      value={mintAmount}
-                      onChange={(e) => setMintAmount(e.target.value)}
-                      className="input"
-                    />
-                    <button
-                      onClick={handleMint}
-                      disabled={loading}
-                      className="btn btn-primary"
-                    >
-                      {loading ? "Processing..." : "Mint"}
-                    </button>
+                  <div className="section">
+                    <h2>Mint</h2>
+                    <div className="form">
+                      <input
+                        type="text"
+                        placeholder="Recipient address"
+                        value={mintTo}
+                        onChange={(e) => setMintTo(e.target.value)}
+                        className="input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Amount"
+                        value={mintAmount}
+                        onChange={(e) => setMintAmount(e.target.value)}
+                        className="input"
+                      />
+                      <button
+                        onClick={handleMint}
+                        disabled={loading}
+                        className="btn btn-primary"
+                      >
+                        {loading ? "Processing..." : "Mint"}
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <div className="section">
-                  <h2>Burn</h2>
-                  <div className="form">
-                    <input
-                      type="text"
-                      placeholder="Amount"
-                      value={burnAmount}
-                      onChange={(e) => setBurnAmount(e.target.value)}
-                      className="input"
-                    />
-                    <button
-                      onClick={handleBurn}
-                      disabled={loading}
-                      className="btn btn-danger"
-                    >
-                      {loading ? "Processing..." : "Burn"}
-                    </button>
+                  <div className="section">
+                    <h2>Burn</h2>
+                    <div className="form">
+                      <input
+                        type="text"
+                        placeholder="Amount"
+                        value={burnAmount}
+                        onChange={(e) => setBurnAmount(e.target.value)}
+                        className="input"
+                      />
+                      <button
+                        onClick={handleBurn}
+                        disabled={loading}
+                        className="btn btn-danger"
+                      >
+                        {loading ? "Processing..." : "Burn"}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
