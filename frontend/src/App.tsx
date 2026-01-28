@@ -55,6 +55,11 @@ function App() {
     blockNumber: number
     logIndex: number
   }>>([])
+  const [eventBlockRange, setEventBlockRange] = useState<{
+    fromBlock: number
+    toBlock: number
+    totalEvents: number
+  } | null>(null)
 
   // Connect wallet
   const connectWallet = async () => {
@@ -346,9 +351,18 @@ function App() {
           return b.logIndex - a.logIndex
         })
 
-      setEvents(allEvents.slice(0, 20)) // Last 20 events
+      const displayedEvents = allEvents.slice(0, 20) // Last 20 events
+      setEvents(displayedEvents)
+      
+      // Store block range info for display
+      setEventBlockRange({
+        fromBlock: Number(fromBlock),
+        toBlock: Number(currentBlock),
+        totalEvents: allEvents.length,
+      })
     } catch (err: any) {
       console.error('Failed to load events:', err)
+      setEventBlockRange(null)
     }
   }
 
@@ -492,6 +506,26 @@ function App() {
 
                 <div className="section">
                   <h2>Recent Events</h2>
+                  {eventBlockRange && (
+                    <div style={{
+                      padding: '0.75rem',
+                      marginBottom: '1rem',
+                      background: '#fff3cd',
+                      border: '1px solid #ffc107',
+                      borderRadius: '4px',
+                      fontSize: '0.875rem',
+                      color: '#856404'
+                    }}>
+                      <strong>Note:</strong> Showing events from blocks {eventBlockRange.fromBlock.toLocaleString()} to {eventBlockRange.toBlock.toLocaleString()} 
+                      ({eventBlockRange.toBlock - eventBlockRange.fromBlock + 1} blocks, ~{Math.round((eventBlockRange.toBlock - eventBlockRange.fromBlock + 1) / 12)} hours on Ethereum).
+                      {eventBlockRange.totalEvents > 20 && (
+                        <span> Displaying last 20 of {eventBlockRange.totalEvents} events found.</span>
+                      )}
+                      {eventBlockRange.totalEvents === 0 && (
+                        <span> No events found in this range.</span>
+                      )}
+                    </div>
+                  )}
                   <div className="events-list">
                     {events.length === 0 ? (
                       <p>No events found</p>
