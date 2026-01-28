@@ -31,12 +31,23 @@ frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 
-# IDE
+# IDE and Editor settings
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+.cursor/
+*.code-workspace
+
+# Local development files
+.local/
+*.local
 
 # OS
 .DS_Store
