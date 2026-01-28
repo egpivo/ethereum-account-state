@@ -5,7 +5,7 @@
 }
 
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff9900 0%, #ff7a00 100%);
   color: white;
   padding: 2rem;
   text-align: center;
@@ -71,7 +71,7 @@
 
 .input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #ff9900;
 }
 
 .form {
@@ -96,12 +96,12 @@
 }
 
 .btn-primary {
-  background: #667eea;
+  background: #ff9900;
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #5568d3;
+  background: #e88900;
 }
 
 .btn-secondary {
@@ -176,7 +176,7 @@
 }
 
 .tx-link {
-  color: #667eea;
+  color: #d97706;
   text-decoration: none;
 }
 

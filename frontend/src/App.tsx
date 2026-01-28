@@ -76,6 +76,33 @@ function App() {
     return (e as ethers.EventLog).args !== undefined;
   }
 
+  // Token address UX:
+  // - Accept ?token=0x... URL param (shareable)
+  // - Persist last used address in localStorage
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const fromQuery = params.get("token");
+      const fromStorage = window.localStorage.getItem("tokenAddress");
+      const candidate = (fromQuery || fromStorage || "").trim();
+      if (candidate) {
+        setTokenAddress(candidate);
+      }
+    } catch {
+      // Ignore (e.g., storage disabled)
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (tokenAddress && tokenAddress.trim()) {
+        window.localStorage.setItem("tokenAddress", tokenAddress.trim());
+      }
+    } catch {
+      // Ignore
+    }
+  }, [tokenAddress]);
+
   // Connect wallet
   const connectWallet = async () => {
     try {
