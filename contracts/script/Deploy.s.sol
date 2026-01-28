@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
 import {Token} from "../src/Token.sol";
+import {Balance} from "../src/Token.sol";
 
 /**
  * @title DeployScript
@@ -15,7 +16,7 @@ contract DeployScript is Script {
         Token token = new Token();
         
         console.log("Token deployed at:", address(token));
-        console.log("Initial totalSupply:", uint256(token.totalSupply()));
+        console.log("Initial totalSupply:", Balance.unwrap(token.totalSupply()));
 
         vm.stopBroadcast();
         return token;

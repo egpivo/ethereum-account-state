@@ -10,7 +10,7 @@
     "test:foundry": "forge test",
     "test:unit": "vitest run",
     "compile": "forge build",
-    "deploy:local": "forge script contracts/script/Deploy.s.sol:DeployScript --rpc-url http://localhost:8545 --broadcast",
+    "deploy:local": "forge script contracts/script/Deploy.s.sol:DeployScript --rpc-url http://localhost:8545 --broadcast --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
     "deploy:sepolia": "./scripts/deploy-sepolia.sh",
     "lint": "prettier --check . && solhint 'contracts/**/*.sol'"
   },
