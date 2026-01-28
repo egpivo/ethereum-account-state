@@ -79,6 +79,7 @@ npm run dev
 ### MetaMask 顯示 "Unrecognized chain ID"
 
 確保：
+
 - Anvil 正在運行（`anvil` 命令沒有停止）
 - MetaMask 中正確配置了 Chain ID `31337`
 - RPC URL 是 `http://127.0.0.1:8545` 或 `http://localhost:8545`

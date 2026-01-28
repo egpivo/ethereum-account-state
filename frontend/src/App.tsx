@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import "./App.css";
@@ -254,7 +252,10 @@ function App() {
 
   // Load balance
   const loadBalance = async () => {
-    if (!provider || !tokenAddress || !account) return;
+    if (!provider || !tokenAddress || !account) {
+      setError("Please connect wallet and enter token address");
+      return;
+    }
 
     // Validate token address
     if (!validateAddress(tokenAddress)) {
@@ -262,8 +263,20 @@ function App() {
       return;
     }
 
+    setLoading(true);
+    setError("");
+
     try {
       const contract = new ethers.Contract(tokenAddress, TOKEN_ABI, provider);
+
+      // Check if contract exists by calling a simple view function
+      const code = await provider.getCode(tokenAddress);
+      if (code === "0x") {
+        setError("No contract found at this address");
+        setLoading(false);
+        return;
+      }
+
       const [balance, supply] = await Promise.all([
         contract.balanceOf(account),
         contract.totalSupply(),
@@ -275,7 +288,12 @@ function App() {
       setTotalSupply(supply.toString());
       setError("");
     } catch (err: any) {
-      setError(err.message || "Failed to load balance");
+      console.error("Load balance error:", err);
+      setError(
+        err.message || "Failed to load balance. Check console for details."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -575,11 +593,10 @@ function App() {
                 <strong>Connected:</strong> {account.slice(0, 6)}...
                 {account.slice(-4)}
               </p>
-              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
-                <button
-                  onClick={switchAccount}
-                  className="btn btn-secondary"
-                >
+              <div
+                style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}
+              >
+                <button onClick={switchAccount} className="btn btn-secondary">
                   Switch Account
                 </button>
                 <button
