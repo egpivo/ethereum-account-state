@@ -4,17 +4,19 @@
 #
 # Tools installed:
 #   - slither-analyzer : Solidity static analysis (Trail of Bits)
-#   - halmos           : Symbolic testing / formal verification (a]6)
+#   - halmos           : Symbolic testing / formal verification
 #   - gambit           : Solidity mutation testing (Certora)
+#   - solc (via solc-select) : Solidity compiler (required by Gambit)
 #
 # Prerequisites:
-#   - Python 3.8+
+#   - Python 3.8+  (pip3)
 #   - Rust toolchain (cargo) — for Gambit
 #   - Foundry (forge) — already installed
 #
 # Usage:
 #   ./scripts/setup-qa-tools.sh          # install all
 #   ./scripts/setup-qa-tools.sh slither  # install one tool
+#   ./scripts/setup-qa-tools.sh solc     # install solc 0.8.28
 #   ./scripts/setup-qa-tools.sh check    # check what's installed
 # ============================================================================
 set -euo pipefail
@@ -94,6 +96,34 @@ install_halmos() {
   fi
 }
 
+install_solc() {
+  echo ""
+  echo "── Installing solc via solc-select ──"
+
+  local SOLC_VERSION="0.8.28"
+
+  if command -v solc &>/dev/null; then
+    local current
+    current=$(solc --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    if [ "$current" = "$SOLC_VERSION" ]; then
+      log_ok "solc already installed: $current"
+      return
+    fi
+    log_info "solc found ($current) but need $SOLC_VERSION — updating..."
+  fi
+
+  pip3 install solc-select 2>/dev/null
+  solc-select install "$SOLC_VERSION"
+  solc-select use "$SOLC_VERSION"
+
+  if command -v solc &>/dev/null; then
+    log_ok "solc installed: $(solc --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+  else
+    log_err "solc installation failed"
+    return 1
+  fi
+}
+
 install_gambit() {
   echo ""
   echo "── Installing gambit ──"
@@ -126,7 +156,7 @@ check_status() {
   echo "── QA Tool Status ──"
   echo ""
 
-  for tool in forge slither halmos gambit; do
+  for tool in forge solc slither halmos gambit; do
     if command -v "$tool" &>/dev/null; then
       version=$("$tool" --version 2>&1 | head -1)
       log_ok "$tool — $version"
@@ -146,7 +176,7 @@ main() {
 
   # Default: install all
   if [ ${#targets[@]} -eq 0 ]; then
-    targets=(slither halmos gambit)
+    targets=(solc slither halmos gambit)
   fi
 
   # Handle "check" command
@@ -159,10 +189,11 @@ main() {
 
   for target in "${targets[@]}"; do
     case "$target" in
+      solc)    install_solc ;;
       slither) install_slither ;;
       halmos)  install_halmos ;;
       gambit)  install_gambit ;;
-      *)       log_err "Unknown tool: $target (available: slither, halmos, gambit)" ;;
+      *)       log_err "Unknown tool: $target (available: solc, slither, halmos, gambit)" ;;
     esac
   done
 
