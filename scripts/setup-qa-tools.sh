@@ -3,21 +3,24 @@
 # setup-qa-tools.sh — Install blockchain QA tools for this project
 #
 # Tools installed:
+#   - solc (via solc-select) : Solidity compiler (required by Gambit)
 #   - slither-analyzer : Solidity static analysis (Trail of Bits)
 #   - halmos           : Symbolic testing / formal verification
 #   - gambit           : Solidity mutation testing (Certora)
-#   - solc (via solc-select) : Solidity compiler (required by Gambit)
+#   - fast-check       : TypeScript property-based testing (npm)
 #
 # Prerequisites:
 #   - Python 3.8+  (pip3)
+#   - Node.js 18+  (npm)
 #   - Rust toolchain (cargo) — for Gambit
 #   - Foundry (forge) — already installed
 #
 # Usage:
-#   ./scripts/setup-qa-tools.sh          # install all
-#   ./scripts/setup-qa-tools.sh slither  # install one tool
-#   ./scripts/setup-qa-tools.sh solc     # install solc 0.8.28
-#   ./scripts/setup-qa-tools.sh check    # check what's installed
+#   ./scripts/setup-qa-tools.sh            # install all
+#   ./scripts/setup-qa-tools.sh slither    # install one tool
+#   ./scripts/setup-qa-tools.sh solc       # install solc 0.8.28
+#   ./scripts/setup-qa-tools.sh fast-check # install fast-check (npm)
+#   ./scripts/setup-qa-tools.sh check      # check what's installed
 # ============================================================================
 set -euo pipefail
 
@@ -124,6 +127,32 @@ install_solc() {
   fi
 }
 
+install_fast_check() {
+  echo ""
+  echo "── Installing fast-check (npm) ──"
+
+  local PROJECT_ROOT
+  PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+  if node -e "require('fast-check')" 2>/dev/null; then
+    local ver
+    ver=$(node -e "console.log(require('fast-check/package.json').version)" 2>/dev/null)
+    log_ok "fast-check already installed: $ver"
+    return
+  fi
+
+  (cd "$PROJECT_ROOT" && npm install --save-dev fast-check)
+
+  if node -e "require('fast-check')" 2>/dev/null; then
+    local ver
+    ver=$(node -e "console.log(require('fast-check/package.json').version)" 2>/dev/null)
+    log_ok "fast-check installed: $ver"
+  else
+    log_err "fast-check installation failed"
+    return 1
+  fi
+}
+
 install_gambit() {
   echo ""
   echo "── Installing gambit ──"
@@ -165,6 +194,15 @@ check_status() {
     fi
   done
 
+  # Check npm packages
+  if node -e "require('fast-check')" 2>/dev/null; then
+    local ver
+    ver=$(node -e "console.log(require('fast-check/package.json').version)" 2>/dev/null)
+    log_ok "fast-check — $ver"
+  else
+    log_warn "fast-check — not installed"
+  fi
+
   echo ""
 }
 
@@ -176,7 +214,7 @@ main() {
 
   # Default: install all
   if [ ${#targets[@]} -eq 0 ]; then
-    targets=(solc slither halmos gambit)
+    targets=(solc slither halmos gambit fast-check)
   fi
 
   # Handle "check" command
@@ -192,8 +230,9 @@ main() {
       solc)    install_solc ;;
       slither) install_slither ;;
       halmos)  install_halmos ;;
-      gambit)  install_gambit ;;
-      *)       log_err "Unknown tool: $target (available: solc, slither, halmos, gambit)" ;;
+      gambit)     install_gambit ;;
+      fast-check) install_fast_check ;;
+      *)          log_err "Unknown tool: $target (available: solc, slither, halmos, gambit, fast-check)" ;;
     esac
   done
 
