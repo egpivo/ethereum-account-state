@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
-import {Token} from "../src/Token.sol";
+import {Token, Balance} from "../src/Token.sol";
 
 /**
  * @title TokenTest
@@ -36,7 +36,7 @@ contract TokenTest is Test {
         token.mint(alice, amount);
 
         assertEq(token.balanceOf(alice), amount);
-        assertEq(uint256(token.totalSupply()), amount);
+        assertEq(Balance.unwrap(token.totalSupply()), amount);
     }
 
     function test_Mint_ZeroAddress_Reverts() public {
@@ -68,7 +68,7 @@ contract TokenTest is Test {
 
         assertEq(token.balanceOf(alice), mintAmount - transferAmount);
         assertEq(token.balanceOf(bob), transferAmount);
-        assertEq(uint256(token.totalSupply()), mintAmount); // Supply unchanged
+        assertEq(Balance.unwrap(token.totalSupply()), mintAmount); // Supply unchanged
     }
 
     function test_Transfer_InsufficientBalance_Reverts() public {
@@ -122,7 +122,7 @@ contract TokenTest is Test {
         token.burn(burnAmount);
 
         assertEq(token.balanceOf(alice), mintAmount - burnAmount);
-        assertEq(uint256(token.totalSupply()), mintAmount - burnAmount);
+        assertEq(Balance.unwrap(token.totalSupply()), mintAmount - burnAmount);
     }
 
     function test_Burn_InsufficientBalance_Reverts() public {
@@ -192,7 +192,7 @@ contract TokenTest is Test {
         // we cannot enumerate all addresses, but the invariant is guaranteed by construction.
         uint256 aliceBalance = token.balanceOf(alice);
         uint256 bobBalance = token.balanceOf(bob);
-        uint256 totalSupply = uint256(token.totalSupply());
+        uint256 totalSupply = Balance.unwrap(token.totalSupply());
 
         assertEq(aliceBalance + bobBalance, totalSupply);
     }
@@ -216,7 +216,7 @@ contract TokenTest is Test {
 
         // Verify invariant
         uint256 sum = token.balanceOf(alice) + token.balanceOf(bob);
-        assertEq(sum, uint256(token.totalSupply()));
+        assertEq(sum, Balance.unwrap(token.totalSupply()));
     }
 
     // ============ Edge Cases ============
@@ -238,7 +238,7 @@ contract TokenTest is Test {
         token.burn(amount);
 
         assertEq(token.balanceOf(alice), 0);
-        assertEq(uint256(token.totalSupply()), 0);
+        assertEq(Balance.unwrap(token.totalSupply()), 0);
     }
 
     function test_MultipleMints_Accumulate() public {
@@ -247,7 +247,7 @@ contract TokenTest is Test {
         token.mint(alice, 3000);
 
         assertEq(token.balanceOf(alice), 6000);
-        assertEq(uint256(token.totalSupply()), 6000);
+        assertEq(Balance.unwrap(token.totalSupply()), 6000);
     }
 
     // ============ Fuzz Tests ============
@@ -258,7 +258,7 @@ contract TokenTest is Test {
 
         token.mint(alice, amount);
         assertEq(token.balanceOf(alice), amount);
-        assertEq(uint256(token.totalSupply()), amount);
+        assertEq(Balance.unwrap(token.totalSupply()), amount);
     }
 
     function testFuzz_Transfer_Invariant(
@@ -276,8 +276,8 @@ contract TokenTest is Test {
 
         assertEq(
             token.balanceOf(alice) + token.balanceOf(bob),
-            uint256(token.totalSupply())
+            Balance.unwrap(token.totalSupply())
         );
-        assertEq(uint256(token.totalSupply()), mintAmount);
+        assertEq(Balance.unwrap(token.totalSupply()), mintAmount);
     }
 }

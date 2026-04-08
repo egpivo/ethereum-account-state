@@ -52,3 +52,6 @@ frontend/.vite/
 # OS
 .DS_Store
 Thumbs.db
+
+.gas-snapshot
+.claude/

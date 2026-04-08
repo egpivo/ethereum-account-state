@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 # ============================================================================
 # setup-qa-tools.sh — Install blockchain QA tools for this project
 #

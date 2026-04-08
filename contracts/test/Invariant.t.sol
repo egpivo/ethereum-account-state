@@ -2,15 +2,14 @@
 pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
-import {InvariantTest} from "forge-std/InvariantTest.sol";
-import {Token} from "../src/Token.sol";
+import {Token, Balance} from "../src/Token.sol";
 
 /**
  * @title TokenInvariantTest
  * @notice Invariant testing for Token state machine
  * @dev Uses Foundry's invariant testing to verify correctness under random operations
  */
-contract TokenInvariantTest is Test, InvariantTest {
+contract TokenInvariantTest is Test {
     Token public token;
     TokenHandler public handler;
 
@@ -52,14 +51,14 @@ contract TokenInvariantTest is Test, InvariantTest {
         for (uint256 i = 0; i < actors.length; i++) {
             sum += token.balanceOf(actors[i]);
         }
-        assertEq(sum, uint256(token.totalSupply()), "Invariant violated: sum(balances) != totalSupply");
+        assertEq(sum, Balance.unwrap(token.totalSupply()), "Invariant violated: sum(balances) != totalSupply");
     }
 
     /**
      * @notice Invariant: totalSupply >= 0 (should always be true, but good to check)
      */
     function invariant_TotalSupplyNonNegative() public view {
-        assertGe(uint256(token.totalSupply()), 0, "Total supply cannot be negative");
+        assertGe(Balance.unwrap(token.totalSupply()), 0, "Total supply cannot be negative");
     }
 
     /**
