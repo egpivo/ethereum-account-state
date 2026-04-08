@@ -9,8 +9,7 @@ import { Token } from "../../domain/entities/Token.js";
 // ---------------------------------------------------------------------------
 
 /** Generate a 40-char hex string for Ethereum addresses */
-const arbHex40 = () =>
-  fc.stringMatching(/^[0-9a-f]{40}$/);
+const arbHex40 = () => fc.stringMatching(/^[0-9a-f]{40}$/);
 
 /** Generate a valid Ethereum address (0x + 40 hex chars, non-zero) */
 const arbAddress = () =>
@@ -234,26 +233,22 @@ describe("Property: Mint always succeeds for valid inputs", () => {
 describe("Property: Transfer conservation", () => {
   it("transfer does not change totalSupply", () => {
     fc.assert(
-      fc.property(
-        arbDistinctAddresses(2),
-        arbBalance(),
-        (actors, amount) => {
-          const token = Token.create(
-            Address.from("0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
-          );
-          const [from, to] = actors;
+      fc.property(arbDistinctAddresses(2), arbBalance(), (actors, amount) => {
+        const token = Token.create(
+          Address.from("0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
+        );
+        const [from, to] = actors;
 
-          // Mint enough to cover transfer
-          const mintAmount = amount.add(Balance.from(1n));
-          token.mint(from, mintAmount);
+        // Mint enough to cover transfer
+        const mintAmount = amount.add(Balance.from(1n));
+        token.mint(from, mintAmount);
 
-          const supplyBefore = token.getTotalSupply().getValue();
-          token.transfer(from, to, amount);
-          const supplyAfter = token.getTotalSupply().getValue();
+        const supplyBefore = token.getTotalSupply().getValue();
+        token.transfer(from, to, amount);
+        const supplyAfter = token.getTotalSupply().getValue();
 
-          expect(supplyAfter).toBe(supplyBefore);
-        }
-      )
+        expect(supplyAfter).toBe(supplyBefore);
+      })
     );
   });
 });
