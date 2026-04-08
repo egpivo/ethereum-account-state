@@ -78,9 +78,11 @@ export class Token {
       throw new Error("Insufficient balance for transfer");
     }
 
-    const toBalance = this.getBalance(to);
-
+    // Update `from` first, then re-read `to` balance.
+    // This matches Solidity's storage semantics where balances[to] is read
+    // after balances[from] is written — critical for self-transfers (from == to).
     this.accounts.set(from.getValue(), fromBalance.subtract(amount));
+    const toBalance = this.getBalance(to);
     this.accounts.set(to.getValue(), toBalance.add(amount));
   }
 
