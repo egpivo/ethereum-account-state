@@ -96,11 +96,11 @@ jobs:
       - name: Run coverage (lcov)
         run: forge coverage --report lcov --report-file lcov.info
 
-      - name: Upload coverage to Coveralls
-        uses: coverallsapp/github-action@v2
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          file: lcov.info
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: egpivo/ethereum-account-state
 
       - name: Check branch coverage >= 95%
         run: |

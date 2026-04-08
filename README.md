@@ -1,7 +1,7 @@
 # Ethereum Account State
 
 [![CI](https://github.com/egpivo/ethereum-account-state/actions/workflows/ci.yml/badge.svg)](https://github.com/egpivo/ethereum-account-state/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/github/egpivo/ethereum-account-state/badge.svg?branch=main)](https://coveralls.io/github/egpivo/ethereum-account-state?branch=main)
+[![codecov](https://codecov.io/gh/egpivo/ethereum-account-state/graph/badge.svg?token=UqxnQTiqPf)](https://codecov.io/gh/egpivo/ethereum-account-state)
 
 Minimal token + wallet UI built around a deterministic, inspectable state machine.
 
